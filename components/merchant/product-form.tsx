@@ -43,11 +43,15 @@ export function ProductForm({ merchantId, product }: ProductFormProps) {
   const [formData, setFormData] = useState({
     name: product?.name || "",
     description: product?.description || "",
+    brand: product?.brand || "",
     price: product?.price?.toString() || "",
-    stock: product?.stock?.toString() || "",
+    mrp: product?.mrp?.toString() || "",
+    unit: product?.unit || "piece",
     category: product?.category || "",
-    image_url: product?.image_url || "",
-    is_active: product?.is_active ?? true,
+    subCategory: product?.subCategory || "",
+    imageUrl: product?.imageUrl || "",
+    stock: product?.stock?.toString() || "",
+    isAvailable: product?.isAvailable ?? true,
   })
   const router = useRouter()
 
@@ -69,7 +73,7 @@ export function ProductForm({ merchantId, product }: ProductFormProps) {
     try {
       const reader = new FileReader()
       reader.onloadend = () => {
-        setFormData((prev) => ({ ...prev, image_url: reader.result as string }))
+        setFormData((prev) => ({ ...prev, imageUrl: reader.result as string }))
         setUploading(false)
       }
       reader.readAsDataURL(file)
@@ -92,14 +96,19 @@ export function ProductForm({ merchantId, product }: ProductFormProps) {
     setLoading(true)
 
     const productData = {
+      id: product?.id,
       merchantId: merchantId,
       name: formData.name,
       description: formData.description || null,
+      brand: formData.brand || null,
       price: Number.parseFloat(formData.price),
-      stock: Number.parseInt(formData.stock),
+      mrp: formData.mrp ? Number.parseFloat(formData.mrp) : Number.parseFloat(formData.price),
+      unit: formData.unit || "piece",
       category: formData.category || null,
-      imageUrl: formData.image_url || null,
-      isActive: formData.is_active,
+      subCategory: formData.subCategory || null,
+      imageUrl: formData.imageUrl || null,
+      stock: Number.parseInt(formData.stock),
+      isAvailable: formData.isAvailable,
     }
 
     console.log("[v0] Submitting product:", productData)
@@ -143,19 +152,19 @@ export function ProductForm({ merchantId, product }: ProductFormProps) {
             className={cn(
               "border-2 border-dashed rounded-2xl transition-all",
               dragOver ? "border-[#FF7F32] bg-orange-50" : "border-gray-200 hover:border-gray-300",
-              formData.image_url ? "p-4" : "p-6 sm:p-8",
+              formData.imageUrl ? "p-4" : "p-6 sm:p-8",
             )}
           >
-            {formData.image_url ? (
+            {formData.imageUrl ? (
               <div className="relative inline-block mx-auto">
                 <img
-                  src={formData.image_url || "/placeholder.svg"}
+                  src={formData.imageUrl || "/placeholder.svg"}
                   alt="Product"
                   className="max-w-full max-h-48 sm:max-h-64 rounded-xl object-cover mx-auto"
                 />
                 <button
                   type="button"
-                  onClick={() => setFormData((prev) => ({ ...prev, image_url: "" }))}
+                  onClick={() => setFormData((prev) => ({ ...prev, imageUrl: "" }))}
                   className="absolute -top-2 -right-2 w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 shadow-lg touch-active"
                 >
                   <X className="w-4 h-4" />
@@ -297,12 +306,70 @@ export function ProductForm({ merchantId, product }: ProductFormProps) {
               className="rounded-xl border-gray-200 h-11 text-sm focus:border-[#FF7F32] focus:ring-[#FF7F32]/20"
             />
           </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="brand" className="text-gray-700 text-sm font-medium">
+              Brand
+            </Label>
+            <Input
+              id="brand"
+              value={formData.brand}
+              onChange={(e) => setFormData((prev) => ({ ...prev, brand: e.target.value }))}
+              placeholder="Enter brand name"
+              className="rounded-xl border-gray-200 h-12 text-base focus:border-[#FF7F32] focus:ring-[#FF7F32]/20"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="mrp" className="text-gray-700 text-sm font-medium">
+              MRP
+            </Label>
+            <div className="relative">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-medium">₹</span>
+              <Input
+                id="mrp"
+                type="number"
+                min="0"
+                step="0.01"
+                value={formData.mrp}
+                onChange={(e) => setFormData((prev) => ({ ...prev, mrp: e.target.value }))}
+                placeholder="0.00"
+                className="rounded-xl border-gray-200 h-12 pl-8 text-base focus:border-[#FF7F32] focus:ring-[#FF7F32]/20"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="unit" className="text-gray-700 text-sm font-medium">
+              Unit
+            </Label>
+            <Input
+              id="unit"
+              value={formData.unit}
+              onChange={(e) => setFormData((prev) => ({ ...prev, unit: e.target.value }))}
+              placeholder="e.g., kg, piece, liter"
+              className="rounded-xl border-gray-200 h-12 text-base focus:border-[#FF7F32] focus:ring-[#FF7F32]/20"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="subCategory" className="text-gray-700 text-sm font-medium">
+              Sub Category
+            </Label>
+            <Input
+              id="subCategory"
+              value={formData.subCategory}
+              onChange={(e) => setFormData((prev) => ({ ...prev, subCategory: e.target.value }))}
+              placeholder="Enter sub category"
+              className="rounded-xl border-gray-200 h-12 text-base focus:border-[#FF7F32] focus:ring-[#FF7F32]/20"
+            />
+          </div>
         </Card>
 
         <Card
           className={cn(
             "p-5 sm:p-6 rounded-2xl border-0 shadow-sm transition-all",
-            formData.is_active ? "bg-gradient-to-br from-green-50 to-white border border-green-100" : "bg-white",
+            formData.isAvailable ? "bg-gradient-to-br from-green-50 to-white border border-green-100" : "bg-white",
           )}
         >
           <div className="flex items-center justify-between">
@@ -310,10 +377,10 @@ export function ProductForm({ merchantId, product }: ProductFormProps) {
               <div
                 className={cn(
                   "w-12 h-12 rounded-xl flex items-center justify-center transition-colors",
-                  formData.is_active ? "bg-green-100" : "bg-gray-100",
+                  formData.isAvailable ? "bg-green-100" : "bg-gray-100",
                 )}
               >
-                {formData.is_active ? (
+                {formData.isAvailable ? (
                   <Sparkles className="w-6 h-6 text-green-600" />
                 ) : (
                   <Package className="w-6 h-6 text-gray-400" />
@@ -322,15 +389,18 @@ export function ProductForm({ merchantId, product }: ProductFormProps) {
               <div>
                 <Label className="text-base font-semibold text-gray-900 block">Product Status</Label>
                 <p
-                  className={cn("text-sm mt-0.5 font-medium", formData.is_active ? "text-green-600" : "text-gray-500")}
+                  className={cn(
+                    "text-sm mt-0.5 font-medium",
+                    formData.isAvailable ? "text-green-600" : "text-gray-500",
+                  )}
                 >
-                  {formData.is_active ? "Visible to customers" : "Hidden from customers"}
+                  {formData.isAvailable ? "Visible to customers" : "Hidden from customers"}
                 </p>
               </div>
             </div>
             <Switch
-              checked={formData.is_active}
-              onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, is_active: checked }))}
+              checked={formData.isAvailable}
+              onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, isAvailable: checked }))}
               className="data-[state=checked]:bg-green-500 scale-110"
             />
           </div>

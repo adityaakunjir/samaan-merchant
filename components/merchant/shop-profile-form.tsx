@@ -24,12 +24,21 @@ export function ShopProfileForm({ merchant }: ShopProfileFormProps) {
   const [saved, setSaved] = useState(false)
   const [mounted, setMounted] = useState(false)
   const [formData, setFormData] = useState({
-    shop_name: merchant?.shop_name || "",
-    address: merchant?.address || "",
-    phone: merchant?.phone || "",
-    eta_minutes: merchant?.eta_minutes || 30,
-    is_open: merchant?.is_open || false,
-    logo_url: merchant?.logo_url || "",
+    shopName: merchant?.shopName || "",
+    shopType: merchant?.shopType || "Kirana",
+    description: merchant?.description || "",
+    shopAddress: merchant?.shopAddress || "",
+    city: merchant?.city || "",
+    pincode: merchant?.pincode || "",
+    phone: "",
+    latitude: merchant?.latitude || 0,
+    longitude: merchant?.longitude || 0,
+    deliveryRadius: merchant?.deliveryRadius || 5,
+    minOrderAmount: merchant?.minOrderAmount || 0,
+    deliveryFee: merchant?.deliveryFee || 0,
+    isOpen: merchant?.isOpen ?? true,
+    openTime: merchant?.openTime || "09:00",
+    closeTime: merchant?.closeTime || "21:00",
   })
   const router = useRouter()
 
@@ -40,12 +49,21 @@ export function ShopProfileForm({ merchant }: ShopProfileFormProps) {
   useEffect(() => {
     if (merchant) {
       setFormData({
-        shop_name: merchant.shop_name || "",
-        address: merchant.address || "",
-        phone: merchant.phone || "",
-        eta_minutes: merchant.eta_minutes || 30,
-        is_open: merchant.is_open || false,
-        logo_url: merchant.logo_url || "",
+        shopName: merchant.shopName || "",
+        shopType: merchant.shopType || "Kirana",
+        description: merchant.description || "",
+        shopAddress: merchant.shopAddress || "",
+        city: merchant.city || "",
+        pincode: merchant.pincode || "",
+        phone: "",
+        latitude: merchant.latitude || 0,
+        longitude: merchant.longitude || 0,
+        deliveryRadius: merchant.deliveryRadius || 5,
+        minOrderAmount: merchant.minOrderAmount || 0,
+        deliveryFee: merchant.deliveryFee || 0,
+        isOpen: merchant.isOpen ?? true,
+        openTime: merchant.openTime || "09:00",
+        closeTime: merchant.closeTime || "21:00",
       })
     }
   }, [merchant])
@@ -65,10 +83,8 @@ export function ShopProfileForm({ merchant }: ShopProfileFormProps) {
 
     setUploading(true)
     try {
-      // For now, create a local URL - in production, upload to your server
-      const localUrl = URL.createObjectURL(file)
-      setFormData((prev) => ({ ...prev, logo_url: localUrl }))
-      // Note: For production, implement file upload to your .NET API
+      // TODO: Implement actual file upload to your .NET backend
+      alert("Image upload will be available soon")
     } catch (error) {
       console.error("Upload error:", error)
       alert("Failed to upload image")
@@ -83,12 +99,25 @@ export function ShopProfileForm({ merchant }: ShopProfileFormProps) {
 
     try {
       const updateData = {
-        shopName: formData.shop_name,
-        address: formData.address,
-        phone: formData.phone,
-        etaMinutes: formData.eta_minutes,
-        isOpen: formData.is_open,
-        logoUrl: formData.logo_url,
+        id: merchant?.id,
+        userId: merchant?.userId,
+        shopName: formData.shopName,
+        shopType: formData.shopType,
+        description: formData.description,
+        shopAddress: formData.shopAddress,
+        city: formData.city,
+        pincode: formData.pincode,
+        latitude: formData.latitude,
+        longitude: formData.longitude,
+        deliveryRadius: formData.deliveryRadius,
+        minOrderAmount: formData.minOrderAmount,
+        deliveryFee: formData.deliveryFee,
+        isOpen: formData.isOpen,
+        openTime: formData.openTime,
+        closeTime: formData.closeTime,
+        rating: merchant?.rating || 0,
+        totalOrders: merchant?.totalOrders || 0,
+        isVerified: merchant?.isVerified || false,
       }
 
       console.log("[v0] Updating merchant profile:", updateData)
@@ -109,7 +138,7 @@ export function ShopProfileForm({ merchant }: ShopProfileFormProps) {
     setLoading(false)
   }
 
-  const etaPresets = [15, 20, 30, 45, 60]
+  const deliveryTimePresets = [15, 20, 30, 45, 60]
 
   return (
     <form
@@ -126,15 +155,7 @@ export function ShopProfileForm({ merchant }: ShopProfileFormProps) {
                 uploading && "animate-pulse",
               )}
             >
-              {formData.logo_url ? (
-                <img
-                  src={formData.logo_url || "/placeholder.svg"}
-                  alt="Shop logo"
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <Store className="w-12 h-12 text-gray-300" />
-              )}
+              <Store className="w-12 h-12 text-gray-300" />
             </div>
             <label
               className={cn(
@@ -159,12 +180,6 @@ export function ShopProfileForm({ merchant }: ShopProfileFormProps) {
           <div className="text-center sm:text-left">
             <p className="text-gray-700 font-medium">Upload your shop logo</p>
             <p className="text-sm text-gray-500 mt-1">JPG, PNG up to 5MB</p>
-            {uploading && (
-              <p className="text-[#FF7F32] mt-2 flex items-center gap-2 justify-center sm:justify-start text-sm">
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Uploading...
-              </p>
-            )}
           </div>
         </div>
       </Card>
@@ -176,13 +191,13 @@ export function ShopProfileForm({ merchant }: ShopProfileFormProps) {
         </h3>
 
         <div className="space-y-2">
-          <Label htmlFor="shop_name" className="text-gray-700 text-sm font-medium">
+          <Label htmlFor="shopName" className="text-gray-700 text-sm font-medium">
             Shop Name *
           </Label>
           <Input
-            id="shop_name"
-            value={formData.shop_name}
-            onChange={(e) => setFormData((prev) => ({ ...prev, shop_name: e.target.value }))}
+            id="shopName"
+            value={formData.shopName}
+            onChange={(e) => setFormData((prev) => ({ ...prev, shopName: e.target.value }))}
             placeholder="Enter your shop name"
             className="rounded-xl border-gray-200 h-12 text-base focus:border-[#FF7F32] focus:ring-[#FF7F32]/20"
             required
@@ -190,90 +205,140 @@ export function ShopProfileForm({ merchant }: ShopProfileFormProps) {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="address" className="text-gray-700 text-sm font-medium">
+          <Label htmlFor="shopAddress" className="text-gray-700 text-sm font-medium">
             Shop Address
           </Label>
           <Input
-            id="address"
-            value={formData.address}
-            onChange={(e) => setFormData((prev) => ({ ...prev, address: e.target.value }))}
+            id="shopAddress"
+            value={formData.shopAddress}
+            onChange={(e) => setFormData((prev) => ({ ...prev, shopAddress: e.target.value }))}
             placeholder="Enter your shop address"
             className="rounded-xl border-gray-200 h-12 text-base focus:border-[#FF7F32] focus:ring-[#FF7F32]/20"
           />
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="phone" className="text-gray-700 text-sm font-medium">
-            Phone Number
-          </Label>
-          <div className="flex">
-            <div className="flex items-center px-4 bg-gray-100 border border-r-0 border-gray-200 rounded-l-xl text-gray-500 font-medium">
-              +91
-            </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="city" className="text-gray-700 text-sm font-medium">
+              City
+            </Label>
             <Input
-              id="phone"
-              type="tel"
-              value={formData.phone}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, phone: e.target.value.replace(/\D/g, "").slice(0, 10) }))
-              }
-              placeholder="Enter 10-digit number"
-              className="rounded-l-none rounded-r-xl border-gray-200 h-12 text-base focus:border-[#FF7F32] focus:ring-[#FF7F32]/20"
+              id="city"
+              value={formData.city}
+              onChange={(e) => setFormData((prev) => ({ ...prev, city: e.target.value }))}
+              placeholder="City"
+              className="rounded-xl border-gray-200 h-12 text-base focus:border-[#FF7F32] focus:ring-[#FF7F32]/20"
             />
           </div>
+          <div className="space-y-2">
+            <Label htmlFor="pincode" className="text-gray-700 text-sm font-medium">
+              Pincode
+            </Label>
+            <Input
+              id="pincode"
+              value={formData.pincode}
+              onChange={(e) => setFormData((prev) => ({ ...prev, pincode: e.target.value }))}
+              placeholder="Pincode"
+              className="rounded-xl border-gray-200 h-12 text-base focus:border-[#FF7F32] focus:ring-[#FF7F32]/20"
+            />
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="description" className="text-gray-700 text-sm font-medium">
+            Description
+          </Label>
+          <Input
+            id="description"
+            value={formData.description}
+            onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
+            placeholder="Brief description of your shop"
+            className="rounded-xl border-gray-200 h-12 text-base focus:border-[#FF7F32] focus:ring-[#FF7F32]/20"
+          />
         </div>
       </Card>
 
       <Card className="p-5 sm:p-6 bg-white rounded-2xl border-0 shadow-sm space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-base font-semibold text-gray-900 flex items-center gap-2">
-            <Clock className="w-5 h-5 text-[#FF7F32]" />
-            Delivery Time
-          </h3>
-          <span className="text-sm text-gray-500">
-            Currently: <span className="font-semibold text-gray-900">{formData.eta_minutes} mins</span>
-          </span>
+        <h3 className="text-base font-semibold text-gray-900 flex items-center gap-2">
+          <Clock className="w-5 h-5 text-[#FF7F32]" />
+          Delivery Settings
+        </h3>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="deliveryRadius" className="text-gray-700 text-sm font-medium">
+              Delivery Radius (km)
+            </Label>
+            <Input
+              id="deliveryRadius"
+              type="number"
+              min="1"
+              value={formData.deliveryRadius}
+              onChange={(e) => setFormData((prev) => ({ ...prev, deliveryRadius: Number(e.target.value) }))}
+              className="rounded-xl border-gray-200 h-12 text-base focus:border-[#FF7F32] focus:ring-[#FF7F32]/20"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="deliveryFee" className="text-gray-700 text-sm font-medium">
+              Delivery Fee (₹)
+            </Label>
+            <Input
+              id="deliveryFee"
+              type="number"
+              min="0"
+              value={formData.deliveryFee}
+              onChange={(e) => setFormData((prev) => ({ ...prev, deliveryFee: Number(e.target.value) }))}
+              className="rounded-xl border-gray-200 h-12 text-base focus:border-[#FF7F32] focus:ring-[#FF7F32]/20"
+            />
+          </div>
         </div>
 
-        <div className="flex flex-wrap gap-2">
-          {etaPresets.map((eta) => (
-            <button
-              key={eta}
-              type="button"
-              onClick={() => setFormData((prev) => ({ ...prev, eta_minutes: eta }))}
-              className={cn(
-                "px-4 py-2.5 rounded-xl text-sm font-medium transition-all touch-active",
-                formData.eta_minutes === eta
-                  ? "bg-gradient-to-r from-[#FF7F32] to-[#ea580c] text-white shadow-lg shadow-orange-100"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200",
-              )}
-            >
-              {eta} min
-            </button>
-          ))}
-        </div>
-
-        <div className="flex items-center gap-3 pt-2">
-          <Label htmlFor="eta" className="text-sm text-gray-600 whitespace-nowrap">
-            Custom:
+        <div className="space-y-2">
+          <Label htmlFor="minOrderAmount" className="text-gray-700 text-sm font-medium">
+            Minimum Order Amount (₹)
           </Label>
           <Input
-            id="eta"
+            id="minOrderAmount"
             type="number"
-            min="5"
-            max="120"
-            value={formData.eta_minutes}
-            onChange={(e) => setFormData((prev) => ({ ...prev, eta_minutes: Number.parseInt(e.target.value) || 30 }))}
-            className="rounded-xl border-gray-200 h-10 w-24 text-center text-base"
+            min="0"
+            value={formData.minOrderAmount}
+            onChange={(e) => setFormData((prev) => ({ ...prev, minOrderAmount: Number(e.target.value) }))}
+            className="rounded-xl border-gray-200 h-12 text-base focus:border-[#FF7F32] focus:ring-[#FF7F32]/20"
           />
-          <span className="text-sm text-gray-500">minutes</span>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="openTime" className="text-gray-700 text-sm font-medium">
+              Opening Time
+            </Label>
+            <Input
+              id="openTime"
+              type="time"
+              value={formData.openTime}
+              onChange={(e) => setFormData((prev) => ({ ...prev, openTime: e.target.value }))}
+              className="rounded-xl border-gray-200 h-12 text-base focus:border-[#FF7F32] focus:ring-[#FF7F32]/20"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="closeTime" className="text-gray-700 text-sm font-medium">
+              Closing Time
+            </Label>
+            <Input
+              id="closeTime"
+              type="time"
+              value={formData.closeTime}
+              onChange={(e) => setFormData((prev) => ({ ...prev, closeTime: e.target.value }))}
+              className="rounded-xl border-gray-200 h-12 text-base focus:border-[#FF7F32] focus:ring-[#FF7F32]/20"
+            />
+          </div>
         </div>
       </Card>
 
       <Card
         className={cn(
           "p-5 sm:p-6 rounded-2xl border-0 shadow-sm transition-all",
-          formData.is_open ? "bg-gradient-to-br from-green-50 to-white border border-green-100" : "bg-white",
+          formData.isOpen ? "bg-gradient-to-br from-green-50 to-white border border-green-100" : "bg-white",
         )}
       >
         <div className="flex items-center justify-between">
@@ -281,10 +346,10 @@ export function ShopProfileForm({ merchant }: ShopProfileFormProps) {
             <div
               className={cn(
                 "w-12 h-12 rounded-xl flex items-center justify-center transition-colors",
-                formData.is_open ? "bg-green-100" : "bg-gray-100",
+                formData.isOpen ? "bg-green-100" : "bg-gray-100",
               )}
             >
-              {formData.is_open ? (
+              {formData.isOpen ? (
                 <Sparkles className="w-6 h-6 text-green-600" />
               ) : (
                 <Store className="w-6 h-6 text-gray-400" />
@@ -292,14 +357,14 @@ export function ShopProfileForm({ merchant }: ShopProfileFormProps) {
             </div>
             <div>
               <Label className="text-base font-semibold text-gray-900 block">Shop Status</Label>
-              <p className={cn("text-sm mt-0.5 font-medium", formData.is_open ? "text-green-600" : "text-gray-500")}>
-                {formData.is_open ? "Your shop is open and accepting orders" : "Your shop is currently closed"}
+              <p className={cn("text-sm mt-0.5 font-medium", formData.isOpen ? "text-green-600" : "text-gray-500")}>
+                {formData.isOpen ? "Your shop is open and accepting orders" : "Your shop is currently closed"}
               </p>
             </div>
           </div>
           <Switch
-            checked={formData.is_open}
-            onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, is_open: checked }))}
+            checked={formData.isOpen}
+            onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, isOpen: checked }))}
             className="data-[state=checked]:bg-green-500 scale-110"
           />
         </div>
