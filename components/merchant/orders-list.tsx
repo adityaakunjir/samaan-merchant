@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
-import { createClient } from "@/lib/supabase/client"
+import { api } from "@/lib/api/client"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -77,26 +77,52 @@ export function OrdersList({ orders: initialOrders }: OrdersListProps) {
   const [mounted, setMounted] = useState(false)
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const router = useRouter()
-  const supabase = createClient()
 
   useEffect(() => {
     setMounted(true)
   }, [])
 
+  useEffect(() => {
+    setOrders(initialOrders)
+  }, [initialOrders])
+
   const refreshOrders = async () => {
     setRefreshing(true)
-    const { data: newOrders } = await supabase.from("orders").select("*").order("created_at", { ascending: false })
+    try {
+      const data = await api.orders.getMerchantOrders()
 
-    if (newOrders) {
+      const mappedOrders = (data || []).map((o: any) => ({
+        id: o.id,
+        merchant_id: o.merchantId,
+        customer_name: o.customerName || o.userName || "Customer",
+        customer_phone: o.customerPhone || o.userPhone,
+        customer_address: o.customerAddress || o.deliveryAddress,
+        status: o.status?.toLowerCase() || "new",
+        total_amount: o.totalAmount || o.total,
+        items:
+          o.items ||
+          o.orderItems?.map((item: any) => ({
+            name: item.productName || item.name,
+            quantity: item.quantity,
+            price: item.unitPrice || item.price,
+          })) ||
+          [],
+        notes: o.notes || o.specialInstructions,
+        created_at: o.createdAt || o.orderDate,
+        updated_at: o.updatedAt,
+      }))
+
       const existingIds = new Set(orders.map((o) => o.id))
-      const newOrdersFound = newOrders.filter((o) => !existingIds.has(o.id) && o.status === "new")
+      const newOrdersFound = mappedOrders.filter((o: any) => !existingIds.has(o.id) && o.status === "new")
 
       if (newOrdersFound.length > 0 && soundEnabled) {
         if (audioRef.current) {
           audioRef.current.play().catch(() => {})
         }
       }
-      setOrders(newOrders)
+      setOrders(mappedOrders)
+    } catch (error) {
+      console.error("Failed to refresh orders:", error)
     }
     setTimeout(() => setRefreshing(false), 500)
   }
@@ -111,16 +137,20 @@ export function OrdersList({ orders: initialOrders }: OrdersListProps) {
   const updateOrderStatus = async (orderId: string, newStatus: string) => {
     setUpdating(orderId)
 
-    await supabase.from("orders").update({ status: newStatus, updated_at: new Date().toISOString() }).eq("id", orderId)
+    try {
+      await api.orders.updateStatus(orderId, newStatus)
 
-    setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status: newStatus as Order["status"] } : o)))
+      setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status: newStatus as Order["status"] } : o)))
 
-    if (selectedOrder?.id === orderId) {
-      setSelectedOrder((prev) => (prev ? { ...prev, status: newStatus as Order["status"] } : null))
+      if (selectedOrder?.id === orderId) {
+        setSelectedOrder((prev) => (prev ? { ...prev, status: newStatus as Order["status"] } : null))
+      }
+    } catch (error) {
+      console.error("Failed to update order status:", error)
+      alert("Failed to update order status")
     }
 
     setTimeout(() => setUpdating(null), 300)
-    router.refresh()
   }
 
   const getNextStatus = (currentStatus: string) => {
@@ -248,7 +278,7 @@ export function OrdersList({ orders: initialOrders }: OrdersListProps) {
       ) : (
         <div className="space-y-3 stagger-children">
           {filteredOrders.map((order) => {
-            const config = statusConfig[order.status]
+            const config = statusConfig[order.status] || statusConfig.new
             const StatusIcon = config.icon
             const nextStatus = getNextStatus(order.status)
             const isUpdating = updating === order.id
@@ -336,17 +366,16 @@ export function OrdersList({ orders: initialOrders }: OrdersListProps) {
                   <Badge
                     className={cn(
                       "rounded-full px-3 py-1",
-                      statusConfig[selectedOrder.status].color.split(" ").slice(0, 2).join(" "),
+                      (statusConfig[selectedOrder.status] || statusConfig.new).color.split(" ").slice(0, 2).join(" "),
                     )}
                   >
-                    {statusConfig[selectedOrder.status].label}
+                    {(statusConfig[selectedOrder.status] || statusConfig.new).label}
                   </Badge>
                 </div>
                 <p className="text-sm text-gray-500">{new Date(selectedOrder.created_at).toLocaleString()}</p>
               </DialogHeader>
 
               <div className="space-y-4">
-                {/* Customer Info */}
                 <div className="bg-gray-50 rounded-xl p-4 space-y-3">
                   <p className="font-semibold text-gray-900">{selectedOrder.customer_name}</p>
                   {selectedOrder.customer_phone && (
@@ -370,7 +399,6 @@ export function OrdersList({ orders: initialOrders }: OrdersListProps) {
                   )}
                 </div>
 
-                {/* Order Items */}
                 <div>
                   <h4 className="font-semibold text-gray-900 mb-3">Order Items</h4>
                   <div className="space-y-2 bg-gray-50 rounded-xl p-4">
@@ -391,7 +419,6 @@ export function OrdersList({ orders: initialOrders }: OrdersListProps) {
                   </div>
                 </div>
 
-                {/* Notes */}
                 {selectedOrder.notes && (
                   <div className="bg-amber-50 border border-amber-100 rounded-xl p-4">
                     <p className="text-sm text-amber-800 flex items-start gap-2">
@@ -401,7 +428,6 @@ export function OrdersList({ orders: initialOrders }: OrdersListProps) {
                   </div>
                 )}
 
-                {/* Status Actions */}
                 {selectedOrder.status !== "delivered" && selectedOrder.status !== "cancelled" && (
                   <div className="flex gap-2 pt-2">
                     <Button

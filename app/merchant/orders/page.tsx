@@ -1,27 +1,74 @@
-import { redirect } from "next/navigation"
-import { createClient } from "@/lib/supabase/server"
+"use client"
+
+import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
+import { api } from "@/lib/api/client"
 import { OrdersList } from "@/components/merchant/orders-list"
+import { Loader2 } from "lucide-react"
 
-export default async function OrdersPage() {
-  const supabase = await createClient()
+export default function OrdersPage() {
+  const [orders, setOrders] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const router = useRouter()
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  useEffect(() => {
+    const fetchOrders = async () => {
+      const token = localStorage.getItem("token")
+      const userStr = localStorage.getItem("user")
 
-  if (!user) {
-    redirect("/merchant/login")
+      if (!token || !userStr) {
+        router.push("/merchant/login")
+        return
+      }
+
+      try {
+        // Fetch orders for this merchant
+        const data = await api.orders.getMerchantOrders()
+
+        // Map .NET camelCase to snake_case for component compatibility
+        const mappedOrders = (data || []).map((o: any) => ({
+          id: o.id,
+          merchant_id: o.merchantId,
+          customer_name: o.customerName || o.userName || "Customer",
+          customer_phone: o.customerPhone || o.userPhone,
+          customer_address: o.customerAddress || o.deliveryAddress,
+          status: o.status?.toLowerCase() || "new",
+          total_amount: o.totalAmount || o.total,
+          items:
+            o.items ||
+            o.orderItems?.map((item: any) => ({
+              name: item.productName || item.name,
+              quantity: item.quantity,
+              price: item.unitPrice || item.price,
+            })) ||
+            [],
+          notes: o.notes || o.specialInstructions,
+          created_at: o.createdAt || o.orderDate,
+          updated_at: o.updatedAt,
+        }))
+
+        setOrders(mappedOrders)
+      } catch (error) {
+        console.error("Failed to fetch orders:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchOrders()
+  }, [router])
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="w-8 h-8 animate-spin text-[#FF7F32]" />
+      </div>
+    )
   }
-
-  const { data: orders } = await supabase
-    .from("orders")
-    .select("*")
-    .eq("merchant_id", user.id)
-    .order("created_at", { ascending: false })
 
   return (
     <div className="pb-20 lg:pb-0">
-      <OrdersList orders={orders || []} />
+      <OrdersList orders={orders} />
     </div>
   )
 }

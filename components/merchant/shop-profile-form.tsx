@@ -4,7 +4,7 @@ import type React from "react"
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { createClient } from "@/lib/supabase/client"
+import { api } from "@/lib/api/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -32,11 +32,23 @@ export function ShopProfileForm({ merchant }: ShopProfileFormProps) {
     logo_url: merchant?.logo_url || "",
   })
   const router = useRouter()
-  const supabase = createClient()
 
   useEffect(() => {
     setMounted(true)
   }, [])
+
+  useEffect(() => {
+    if (merchant) {
+      setFormData({
+        shop_name: merchant.shop_name || "",
+        address: merchant.address || "",
+        phone: merchant.phone || "",
+        eta_minutes: merchant.eta_minutes || 30,
+        is_open: merchant.is_open || false,
+        logo_url: merchant.logo_url || "",
+      })
+    }
+  }, [merchant])
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -53,21 +65,10 @@ export function ShopProfileForm({ merchant }: ShopProfileFormProps) {
 
     setUploading(true)
     try {
-      const fileExt = file.name.split(".").pop()
-      const fileName = `${merchant?.id}-${Date.now()}.${fileExt}`
-      const filePath = `logos/${fileName}`
-
-      const { error: uploadError } = await supabase.storage
-        .from("merchant-assets")
-        .upload(filePath, file, { upsert: true })
-
-      if (uploadError) throw uploadError
-
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from("merchant-assets").getPublicUrl(filePath)
-
-      setFormData((prev) => ({ ...prev, logo_url: publicUrl }))
+      // For now, create a local URL - in production, upload to your server
+      const localUrl = URL.createObjectURL(file)
+      setFormData((prev) => ({ ...prev, logo_url: localUrl }))
+      // Note: For production, implement file upload to your .NET API
     } catch (error) {
       console.error("Upload error:", error)
       alert("Failed to upload image")
@@ -80,21 +81,24 @@ export function ShopProfileForm({ merchant }: ShopProfileFormProps) {
     e.preventDefault()
     setLoading(true)
 
-    const { error } = await supabase
-      .from("merchants")
-      .update({
-        ...formData,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", merchant?.id)
+    try {
+      // Map snake_case back to camelCase for .NET API
+      const updateData = {
+        shopName: formData.shop_name,
+        address: formData.address,
+        phone: formData.phone,
+        etaMinutes: formData.eta_minutes,
+        isOpen: formData.is_open,
+        logoUrl: formData.logo_url,
+      }
 
-    if (error) {
-      alert("Failed to update profile")
-      console.error(error)
-    } else {
+      await api.merchants.update(merchant?.id || "", updateData)
+
       setSaved(true)
       setTimeout(() => setSaved(false), 2000)
-      router.refresh()
+    } catch (error) {
+      alert("Failed to update profile")
+      console.error(error)
     }
 
     setLoading(false)

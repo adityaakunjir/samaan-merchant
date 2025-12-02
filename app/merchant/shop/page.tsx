@@ -1,20 +1,65 @@
-import { redirect } from "next/navigation"
-import { createClient } from "@/lib/supabase/server"
+"use client"
+
+import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
+import { api } from "@/lib/api/client"
 import { ShopProfileForm } from "@/components/merchant/shop-profile-form"
-import { Store } from "lucide-react"
+import { Store, Loader2 } from "lucide-react"
 
-export default async function ShopProfilePage() {
-  const supabase = await createClient()
+export default function ShopProfilePage() {
+  const [merchant, setMerchant] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+  const router = useRouter()
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  useEffect(() => {
+    const fetchMerchant = async () => {
+      const token = localStorage.getItem("token")
+      const userStr = localStorage.getItem("user")
 
-  if (!user) {
-    redirect("/merchant/login")
+      if (!token || !userStr) {
+        router.push("/merchant/login")
+        return
+      }
+
+      try {
+        const user = JSON.parse(userStr)
+        const merchantId = user.merchantId || user.id
+
+        // Fetch merchant details
+        const data = await api.merchants.getById(merchantId)
+
+        // Map .NET camelCase to snake_case for component compatibility
+        const mappedMerchant = {
+          id: data.id,
+          shop_name: data.shopName || data.businessName || data.name,
+          address: data.address || data.shopAddress,
+          phone: data.phone || data.contactNumber,
+          eta_minutes: data.etaMinutes || data.deliveryTime || 30,
+          is_open: data.isOpen ?? data.isActive ?? true,
+          logo_url: data.logoUrl || data.imageUrl,
+          email: data.email,
+          created_at: data.createdAt,
+          updated_at: data.updatedAt,
+        }
+
+        setMerchant(mappedMerchant)
+      } catch (error) {
+        console.error("Failed to fetch merchant:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchMerchant()
+  }, [router])
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="w-8 h-8 animate-spin text-[#FF7F32]" />
+      </div>
+    )
   }
-
-  const { data: merchant } = await supabase.from("merchants").select("*").eq("id", user.id).single()
 
   return (
     <div className="max-w-2xl mx-auto pb-24 lg:pb-6">

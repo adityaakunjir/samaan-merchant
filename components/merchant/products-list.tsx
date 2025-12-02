@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
-import { createClient } from "@/lib/supabase/client"
+import { api } from "@/lib/api/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
@@ -25,19 +25,23 @@ interface ProductsListProps {
   products: Product[]
 }
 
-export function ProductsList({ products }: ProductsListProps) {
+export function ProductsList({ products: initialProducts }: ProductsListProps) {
   const searchParams = useSearchParams()
+  const [products, setProducts] = useState(initialProducts)
   const [searchQuery, setSearchQuery] = useState("")
   const [filter, setFilter] = useState<"all" | "low-stock" | "inactive">((searchParams.get("filter") as any) || "all")
   const [deleteProduct, setDeleteProduct] = useState<Product | null>(null)
   const [deleting, setDeleting] = useState(false)
   const [mounted, setMounted] = useState(false)
   const router = useRouter()
-  const supabase = createClient()
 
   useEffect(() => {
     setMounted(true)
   }, [])
+
+  useEffect(() => {
+    setProducts(initialProducts)
+  }, [initialProducts])
 
   const filteredProducts = products.filter((product) => {
     const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -56,11 +60,16 @@ export function ProductsList({ products }: ProductsListProps) {
     if (!deleteProduct) return
     setDeleting(true)
 
-    await supabase.from("products").delete().eq("id", deleteProduct.id)
+    try {
+      await api.products.delete(deleteProduct.id)
+      setProducts((prev) => prev.filter((p) => p.id !== deleteProduct.id))
+    } catch (error) {
+      console.error("Failed to delete product:", error)
+      alert("Failed to delete product")
+    }
 
     setDeleting(false)
     setDeleteProduct(null)
-    router.refresh()
   }
 
   const getStockStatus = (stock: number) => {
@@ -194,7 +203,6 @@ export function ProductsList({ products }: ProductsListProps) {
                     </div>
                   )}
 
-                  {/* Stock Badge */}
                   <div
                     className={cn(
                       "absolute top-2 left-2 px-2 py-1 rounded-lg text-xs font-semibold flex items-center gap-1",
@@ -205,14 +213,12 @@ export function ProductsList({ products }: ProductsListProps) {
                     {stockStatus.label}
                   </div>
 
-                  {/* Inactive Badge */}
                   {!product.is_active && (
                     <div className="absolute top-2 right-2 px-2 py-1 bg-gray-800/80 backdrop-blur-sm text-white rounded-lg text-xs font-medium">
                       Inactive
                     </div>
                   )}
 
-                  {/* Quick Actions Overlay */}
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
                     <Link
                       href={`/merchant/products/${product.id}`}
@@ -242,7 +248,6 @@ export function ProductsList({ products }: ProductsListProps) {
                     </p>
                   </div>
 
-                  {/* Mobile Actions - Show on smaller screens */}
                   <div className="flex gap-2 mt-3 sm:hidden">
                     <Button
                       variant="outline"
