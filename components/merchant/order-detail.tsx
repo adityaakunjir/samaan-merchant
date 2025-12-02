@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { createClient } from "@/lib/supabase/client"
+import { ordersAPI } from "@/lib/api/client"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -45,7 +45,6 @@ export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
   const [internalNote, setInternalNote] = useState("")
   const [addingNote, setAddingNote] = useState(false)
   const router = useRouter()
-  const supabase = createClient()
 
   const config = statusConfig[order.status]
   const StatusIcon = config.icon
@@ -54,23 +53,26 @@ export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
   const updateStatus = async (newStatus: string) => {
     setUpdating(true)
 
-    await supabase.from("orders").update({ status: newStatus, updated_at: new Date().toISOString() }).eq("id", order.id)
-
-    setOrder((prev) => ({ ...prev, status: newStatus as Order["status"] }))
-    setUpdating(false)
-    router.refresh()
+    try {
+      await ordersAPI.updateStatus(order.id, newStatus)
+      setOrder((prev) => ({ ...prev, status: newStatus as Order["status"] }))
+      router.refresh()
+    } catch (error) {
+      console.error("Error updating status:", error)
+    } finally {
+      setUpdating(false)
+    }
   }
 
   const addNote = async () => {
     if (!internalNote.trim()) return
     setAddingNote(true)
 
+    // For now, update locally
     const existingNotes = order.notes || ""
     const newNotes = existingNotes
       ? `${existingNotes}\n[${new Date().toLocaleString()}] ${internalNote}`
       : `[${new Date().toLocaleString()}] ${internalNote}`
-
-    await supabase.from("orders").update({ notes: newNotes, updated_at: new Date().toISOString() }).eq("id", order.id)
 
     setOrder((prev) => ({ ...prev, notes: newNotes }))
     setInternalNote("")

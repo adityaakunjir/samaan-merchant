@@ -1,27 +1,57 @@
-import { redirect, notFound } from "next/navigation"
-import { createClient } from "@/lib/supabase/server"
-import { OrderDetail } from "@/components/merchant/order-detail"
+"use client"
 
-export default async function OrderDetailPage({
+import { useEffect, useState, use } from "react"
+import { useRouter, notFound } from "next/navigation"
+import { authAPI, ordersAPI } from "@/lib/api/client"
+import { OrderDetail } from "@/components/merchant/order-detail"
+import { Loader2 } from "lucide-react"
+import type { Order } from "@/lib/types"
+
+export default function OrderDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>
 }) {
-  const { id } = await params
-  const supabase = await createClient()
+  const { id } = use(params)
+  const router = useRouter()
+  const [loading, setLoading] = useState(true)
+  const [order, setOrder] = useState<Order | null>(null)
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  useEffect(() => {
+    const loadData = async () => {
+      if (!authAPI.isAuthenticated()) {
+        router.push("/merchant/login")
+        return
+      }
 
-  if (!user) {
-    redirect("/merchant/login")
+      try {
+        const orderData = await ordersAPI.getById(id)
+        if (!orderData) {
+          notFound()
+          return
+        }
+        setOrder(orderData)
+      } catch (error) {
+        console.error("Error loading order:", error)
+        notFound()
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadData()
+  }, [id, router])
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-[#F97316]" />
+      </div>
+    )
   }
 
-  const { data: order } = await supabase.from("orders").select("*").eq("id", id).eq("merchant_id", user.id).single()
-
   if (!order) {
-    notFound()
+    return notFound()
   }
 
   return (

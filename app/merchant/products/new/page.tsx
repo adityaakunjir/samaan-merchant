@@ -1,17 +1,38 @@
-import { redirect } from "next/navigation"
-import { createClient } from "@/lib/supabase/server"
+"use client"
+
+import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
+import { authAPI } from "@/lib/api/client"
 import { ProductForm } from "@/components/merchant/product-form"
-import { Plus } from "lucide-react"
+import { Plus, Loader2 } from "lucide-react"
 
-export default async function NewProductPage() {
-  const supabase = await createClient()
+export default function NewProductPage() {
+  const router = useRouter()
+  const [loading, setLoading] = useState(true)
+  const [merchantId, setMerchantId] = useState("")
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  useEffect(() => {
+    if (!authAPI.isAuthenticated()) {
+      router.push("/merchant/login")
+      return
+    }
 
-  if (!user) {
-    redirect("/merchant/login")
+    const user = authAPI.getCurrentUser()
+    if (!user) {
+      router.push("/merchant/login")
+      return
+    }
+
+    setMerchantId(user.id)
+    setLoading(false)
+  }, [router])
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-[#F97316]" />
+      </div>
+    )
   }
 
   return (
@@ -26,7 +47,7 @@ export default async function NewProductPage() {
         <p className="text-gray-500">Add a new product to your inventory</p>
       </div>
 
-      <ProductForm merchantId={user.id} />
+      <ProductForm merchantId={merchantId} />
     </div>
   )
 }

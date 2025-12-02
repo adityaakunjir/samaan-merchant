@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { createClient } from "@/lib/supabase/client"
+import { productsAPI } from "@/lib/api/client"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -45,10 +45,7 @@ export function InventoryContent({ products, userId }: InventoryContentProps) {
     setIsDeleting(true)
 
     try {
-      const supabase = createClient()
-      const { error } = await supabase.from("products").delete().eq("id", deletingProduct.id)
-
-      if (error) throw error
+      await productsAPI.delete(deletingProduct.id)
       router.refresh()
     } catch (err) {
       console.error("Delete error:", err)

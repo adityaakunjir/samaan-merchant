@@ -2,10 +2,10 @@
 
 import type React from "react"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { createClient } from "@/lib/supabase/client"
+import { authAPI, productsAPI } from "@/lib/api/client"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { ArrowLeft, Upload, FileSpreadsheet, CheckCircle, AlertCircle, Loader2, Download, X } from "lucide-react"
@@ -26,8 +26,23 @@ export default function ImportProductsPage() {
   const [importing, setImporting] = useState(false)
   const [dragOver, setDragOver] = useState(false)
   const [result, setResult] = useState<{ success: number; failed: number } | null>(null)
+  const [merchantId, setMerchantId] = useState("")
   const router = useRouter()
-  const supabase = createClient()
+
+  useEffect(() => {
+    if (!authAPI.isAuthenticated()) {
+      router.push("/merchant/login")
+      return
+    }
+
+    const user = authAPI.getCurrentUser()
+    if (!user) {
+      router.push("/merchant/login")
+      return
+    }
+
+    setMerchantId(user.id)
+  }, [router])
 
   const parseCSV = (text: string): ProductRow[] => {
     const lines = text.trim().split("\n")
@@ -104,32 +119,23 @@ export default function ImportProductsPage() {
 
     setImporting(true)
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-    if (!user) {
-      router.push("/merchant/login")
-      return
-    }
-
     let success = 0
     let failed = 0
 
     for (const product of validProducts) {
-      const { error } = await supabase.from("products").insert({
-        merchant_id: user.id,
-        name: product.name,
-        description: product.description || null,
-        price: product.price,
-        stock: product.stock,
-        category: product.category || null,
-        is_active: true,
-      })
-
-      if (error) {
-        failed++
-      } else {
+      try {
+        await productsAPI.create({
+          merchant_id: merchantId,
+          name: product.name,
+          description: product.description || null,
+          price: product.price,
+          stock: product.stock,
+          category: product.category || null,
+          is_active: true,
+        })
         success++
+      } catch (error) {
+        failed++
       }
     }
 

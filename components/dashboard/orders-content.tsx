@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { createClient } from "@/lib/supabase/client"
+import { ordersAPI } from "@/lib/api/client"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -44,16 +44,7 @@ export function OrdersContent({ orders }: OrdersContentProps) {
   const handleStatusChange = async (orderId: string, newStatus: string) => {
     setIsUpdating(true)
     try {
-      const supabase = createClient()
-      const { error } = await supabase
-        .from("orders")
-        .update({
-          status: newStatus,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", orderId)
-
-      if (error) throw error
+      await ordersAPI.updateStatus(orderId, newStatus)
       router.refresh()
 
       if (selectedOrder?.id === orderId) {

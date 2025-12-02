@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { LayoutDashboard, Store, Package, ShoppingCart, LogOut, Menu, X, Bell } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { createClient } from "@/lib/supabase/client"
+import { authAPI } from "@/lib/api/client"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
 
@@ -22,8 +22,7 @@ export function Sidebar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   const handleLogout = async () => {
-    const supabase = createClient()
-    await supabase.auth.signOut()
+    authAPI.logout()
     router.push("/auth/login")
   }
 

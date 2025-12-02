@@ -1,37 +1,61 @@
-import { redirect } from "next/navigation"
-import { createClient } from "@/lib/supabase/server"
+"use client"
+
+import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
+import { authAPI, ordersAPI, productsAPI } from "@/lib/api/client"
 import { NotificationsList } from "@/components/merchant/notifications-list"
+import { Loader2 } from "lucide-react"
+import type { Order, Product } from "@/lib/types"
 
-export default async function NotificationsPage() {
-  const supabase = await createClient()
+export default function NotificationsPage() {
+  const router = useRouter()
+  const [loading, setLoading] = useState(true)
+  const [recentOrders, setRecentOrders] = useState<Order[]>([])
+  const [lowStockProducts, setLowStockProducts] = useState<Product[]>([])
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  useEffect(() => {
+    const loadData = async () => {
+      if (!authAPI.isAuthenticated()) {
+        router.push("/merchant/login")
+        return
+      }
 
-  if (!user) {
-    redirect("/merchant/login")
+      const user = authAPI.getCurrentUser()
+      if (!user) {
+        router.push("/merchant/login")
+        return
+      }
+
+      try {
+        // Load orders
+        const orders = await ordersAPI.getMerchantOrders()
+        setRecentOrders((orders || []).slice(0, 20))
+
+        // Load products and filter low stock
+        const products = await productsAPI.getByMerchant(user.id)
+        const lowStock = (products || []).filter((product: Product) => product.stock <= 10 && product.is_active)
+        setLowStockProducts(lowStock)
+      } catch (error) {
+        console.error("Error loading notifications:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadData()
+  }, [router])
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-[#F97316]" />
+      </div>
+    )
   }
-
-  // Get recent orders as notifications
-  const { data: recentOrders } = await supabase
-    .from("orders")
-    .select("*")
-    .eq("merchant_id", user.id)
-    .order("created_at", { ascending: false })
-    .limit(20)
-
-  // Get low stock products
-  const { data: lowStockProducts } = await supabase
-    .from("products")
-    .select("*")
-    .eq("merchant_id", user.id)
-    .lte("stock", 10)
-    .eq("is_active", true)
 
   return (
     <div className="max-w-2xl mx-auto pb-24 lg:pb-6">
-      <NotificationsList orders={recentOrders || []} lowStockProducts={lowStockProducts || []} />
+      <NotificationsList orders={recentOrders} lowStockProducts={lowStockProducts} />
     </div>
   )
 }

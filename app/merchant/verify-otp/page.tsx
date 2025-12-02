@@ -5,7 +5,6 @@ import type React from "react"
 import { useState, useEffect, useRef, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
-import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft, Loader2 } from "lucide-react"
 
@@ -19,7 +18,6 @@ function VerifyOTPContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const phone = searchParams.get("phone") || ""
-  const supabase = createClient()
 
   useEffect(() => {
     if (countdown > 0) {
@@ -56,18 +54,14 @@ function VerifyOTPContent() {
     setLoading(true)
     setError("")
 
-    const { error } = await supabase.auth.verifyOtp({
-      phone: `+91${phone}`,
-      token: otpCode,
-      type: "sms",
-    })
-
-    if (error) {
-      setError(error.message)
+    try {
+      // For now, this is a placeholder
+      // const response = await authAPI.verifyOtp(phone, otpCode)
+      setError("OTP verification not yet implemented in .NET API")
       setLoading(false)
-    } else {
-      router.push("/merchant")
-      router.refresh()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Verification failed")
+      setLoading(false)
     }
   }
 
@@ -75,15 +69,12 @@ function VerifyOTPContent() {
     setResending(true)
     setError("")
 
-    const { error } = await supabase.auth.signInWithOtp({
-      phone: `+91${phone}`,
-    })
-
-    if (error) {
-      setError(error.message)
-    } else {
+    try {
+      setError("OTP resend not yet implemented in .NET API")
       setCountdown(30)
       setOtp(["", "", "", "", "", ""])
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to resend OTP")
     }
 
     setResending(false)

@@ -3,7 +3,7 @@
 import type React from "react"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { createClient } from "@/lib/supabase/client"
+import { merchantsAPI } from "@/lib/api/client"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -53,24 +53,16 @@ export function ShopProfileForm({ merchant, userId }: ShopProfileFormProps) {
     setError(null)
 
     try {
-      const supabase = createClient()
-      const fileExt = file.name.split(".").pop()
-      const fileName = `${userId}/logo.${fileExt}`
-
-      const { error: uploadError } = await supabase.storage
-        .from("merchant-assets")
-        .upload(fileName, file, { upsert: true })
-
-      if (uploadError) throw uploadError
-
-      const { data: urlData } = supabase.storage.from("merchant-assets").getPublicUrl(fileName)
-
-      setLogoPreview(urlData.publicUrl)
-      setFormData((prev) => ({ ...prev, logo_url: urlData.publicUrl }))
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setLogoPreview(reader.result as string)
+        setFormData((prev) => ({ ...prev, logo_url: reader.result as string }))
+        setUploadingLogo(false)
+      }
+      reader.readAsDataURL(file)
     } catch (err) {
       console.error("Upload error:", err)
       setError("Failed to upload logo. Please try again.")
-    } finally {
       setUploadingLogo(false)
     }
   }
@@ -82,27 +74,7 @@ export function ShopProfileForm({ merchant, userId }: ShopProfileFormProps) {
     setSuccess(false)
 
     try {
-      const supabase = createClient()
-
-      if (merchant) {
-        const { error } = await supabase
-          .from("merchants")
-          .update({
-            ...formData,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", userId)
-
-        if (error) throw error
-      } else {
-        const { error } = await supabase.from("merchants").insert({
-          id: userId,
-          ...formData,
-        })
-
-        if (error) throw error
-      }
-
+      await merchantsAPI.update(userId, formData)
       setSuccess(true)
       router.refresh()
     } catch (err) {

@@ -3,7 +3,7 @@
 import type React from "react"
 
 import { useState } from "react"
-import { createClient } from "@/lib/supabase/client"
+import { productsAPI } from "@/lib/api/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -52,24 +52,16 @@ export function ProductForm({ userId, product, onSuccess }: ProductFormProps) {
     setError(null)
 
     try {
-      const supabase = createClient()
-      const fileExt = file.name.split(".").pop()
-      const fileName = `${userId}/products/${Date.now()}.${fileExt}`
-
-      const { error: uploadError } = await supabase.storage
-        .from("merchant-assets")
-        .upload(fileName, file, { upsert: true })
-
-      if (uploadError) throw uploadError
-
-      const { data: urlData } = supabase.storage.from("merchant-assets").getPublicUrl(fileName)
-
-      setImagePreview(urlData.publicUrl)
-      setFormData((prev) => ({ ...prev, image_url: urlData.publicUrl }))
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string)
+        setFormData((prev) => ({ ...prev, image_url: reader.result as string }))
+        setUploadingImage(false)
+      }
+      reader.readAsDataURL(file)
     } catch (err) {
       console.error("Upload error:", err)
       setError("Failed to upload image. Please try again.")
-    } finally {
       setUploadingImage(false)
     }
   }
@@ -92,8 +84,6 @@ export function ProductForm({ userId, product, onSuccess }: ProductFormProps) {
     }
 
     try {
-      const supabase = createClient()
-
       const productData = {
         name: formData.name.trim(),
         description: formData.description.trim() || null,
@@ -102,20 +92,13 @@ export function ProductForm({ userId, product, onSuccess }: ProductFormProps) {
         category: formData.category.trim() || null,
         is_active: formData.is_active,
         image_url: formData.image_url || null,
-        updated_at: new Date().toISOString(),
+        merchant_id: userId,
       }
 
       if (product) {
-        const { error } = await supabase.from("products").update(productData).eq("id", product.id)
-
-        if (error) throw error
+        await productsAPI.update(product.id, productData)
       } else {
-        const { error } = await supabase.from("products").insert({
-          ...productData,
-          merchant_id: userId,
-        })
-
-        if (error) throw error
+        await productsAPI.create(productData)
       }
 
       onSuccess()

@@ -1,21 +1,40 @@
+"use client"
+
 import type React from "react"
-import { redirect } from "next/navigation"
-import { createClient } from "@/lib/supabase/server"
-import { Settings, User, Bell, Shield, HelpCircle, ChevronRight, ExternalLink } from "lucide-react"
+import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
+import { authAPI } from "@/lib/api/client"
+import { Settings, User, Bell, Shield, HelpCircle, ChevronRight, ExternalLink, Loader2 } from "lucide-react"
 import Link from "next/link"
 
-export default async function SettingsPage() {
-  const supabase = await createClient()
+export default function SettingsPage() {
+  const router = useRouter()
+  const [loading, setLoading] = useState(true)
+  const [userEmail, setUserEmail] = useState("")
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  useEffect(() => {
+    if (!authAPI.isAuthenticated()) {
+      router.push("/merchant/login")
+      return
+    }
 
-  if (!user) {
-    redirect("/merchant/login")
+    const user = authAPI.getCurrentUser()
+    if (!user) {
+      router.push("/merchant/login")
+      return
+    }
+
+    setUserEmail(user.email || "")
+    setLoading(false)
+  }, [router])
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-[#F97316]" />
+      </div>
+    )
   }
-
-  const { data: merchant } = await supabase.from("merchants").select("*").eq("id", user.id).single()
 
   return (
     <div className="max-w-2xl mx-auto pb-24 lg:pb-6">
@@ -40,7 +59,7 @@ export default async function SettingsPage() {
             <SettingsItem
               icon={<User className="w-5 h-5" />}
               title="Profile Information"
-              description={user.email || "Manage your account details"}
+              description={userEmail || "Manage your account details"}
               href="/merchant/shop"
             />
             <SettingsItem

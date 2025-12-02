@@ -5,7 +5,7 @@ import type React from "react"
 import { useState, useCallback, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { createClient } from "@/lib/supabase/client"
+import { productsAPI } from "@/lib/api/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -50,7 +50,6 @@ export function ProductForm({ merchantId, product }: ProductFormProps) {
     is_active: product?.is_active ?? true,
   })
   const router = useRouter()
-  const supabase = createClient()
 
   useEffect(() => {
     setMounted(true)
@@ -68,25 +67,15 @@ export function ProductForm({ merchantId, product }: ProductFormProps) {
 
     setUploading(true)
     try {
-      const fileExt = file.name.split(".").pop()
-      const fileName = `${merchantId}-${Date.now()}.${fileExt}`
-      const filePath = `products/${fileName}`
-
-      const { error: uploadError } = await supabase.storage
-        .from("merchant-assets")
-        .upload(filePath, file, { upsert: true })
-
-      if (uploadError) throw uploadError
-
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from("merchant-assets").getPublicUrl(filePath)
-
-      setFormData((prev) => ({ ...prev, image_url: publicUrl }))
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setFormData((prev) => ({ ...prev, image_url: reader.result as string }))
+        setUploading(false)
+      }
+      reader.readAsDataURL(file)
     } catch (error) {
       console.error("Upload error:", error)
       alert("Failed to upload image")
-    } finally {
       setUploading(false)
     }
   }
@@ -111,25 +100,20 @@ export function ProductForm({ merchantId, product }: ProductFormProps) {
       category: formData.category || null,
       image_url: formData.image_url || null,
       is_active: formData.is_active,
-      updated_at: new Date().toISOString(),
     }
 
-    let error
-    if (isEditing) {
-      const result = await supabase.from("products").update(productData).eq("id", product.id)
-      error = result.error
-    } else {
-      const result = await supabase.from("products").insert(productData)
-      error = result.error
-    }
-
-    if (error) {
+    try {
+      if (isEditing && product) {
+        await productsAPI.update(product.id, productData)
+      } else {
+        await productsAPI.create(productData)
+      }
+      router.push("/merchant/products")
+      router.refresh()
+    } catch (error) {
       alert("Failed to save product")
       console.error(error)
       setLoading(false)
-    } else {
-      router.push("/merchant/products")
-      router.refresh()
     }
   }
 
