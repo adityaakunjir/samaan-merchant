@@ -1,8 +1,10 @@
-import { updateSession } from "@/lib/supabase/middleware"
-import type { NextRequest } from "next/server"
+import { NextResponse, type NextRequest } from "next/server"
 
 export async function middleware(request: NextRequest) {
-  return await updateSession(request)
+  // For .NET API authentication, we use JWT tokens stored in localStorage
+  // Auth protection is handled at the page/component level
+  // This middleware just passes requests through
+  return NextResponse.next()
 }
 
 export const config = {
