@@ -45,20 +45,43 @@ async function fetchAPI(endpoint: string, options: RequestInit = {}) {
     ;(headers as Record<string, string>)["Authorization"] = `Bearer ${token}`
   }
 
+  const url = `${API_BASE_URL}${endpoint}`
+
+  // Debug logging
+  console.log("[v0] API Request:", {
+    url,
+    method: options.method || "GET",
+    body: options.body ? JSON.parse(options.body as string) : undefined,
+  })
+
   try {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    const response = await fetch(url, {
       ...options,
       headers,
     })
 
+    console.log("[v0] API Response Status:", response.status, response.statusText)
+
     if (!response.ok) {
-      const error = await response.json().catch(() => ({ message: "Request failed" }))
-      throw new Error(error.message || "Request failed")
+      const errorText = await response.text()
+      console.error("[v0] API Error Response:", errorText)
+
+      let errorMessage = "Request failed"
+      try {
+        const errorJson = JSON.parse(errorText)
+        errorMessage = errorJson.message || errorJson.title || errorJson.error || errorMessage
+      } catch {
+        errorMessage = errorText || errorMessage
+      }
+
+      throw new Error(errorMessage)
     }
 
-    return response.json()
+    const data = await response.json()
+    console.log("[v0] API Response Data:", data)
+    return data
   } catch (error) {
-    console.error("API Error:", error)
+    console.error("[v0] API Error:", error)
     throw error
   }
 }

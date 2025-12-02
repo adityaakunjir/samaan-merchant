@@ -82,7 +82,6 @@ export function ShopProfileForm({ merchant }: ShopProfileFormProps) {
     setLoading(true)
 
     try {
-      // Map snake_case back to camelCase for .NET API
       const updateData = {
         shopName: formData.shop_name,
         address: formData.address,
@@ -92,13 +91,19 @@ export function ShopProfileForm({ merchant }: ShopProfileFormProps) {
         logoUrl: formData.logo_url,
       }
 
-      await api.merchants.update(merchant?.id || "", updateData)
+      console.log("[v0] Updating merchant profile:", updateData)
+
+      if (!merchant?.id) {
+        throw new Error("Merchant ID not found")
+      }
+
+      await api.merchants.update(merchant.id, updateData)
 
       setSaved(true)
       setTimeout(() => setSaved(false), 2000)
-    } catch (error) {
-      alert("Failed to update profile")
-      console.error(error)
+    } catch (error: any) {
+      alert(`Failed to update profile: ${error.message}`)
+      console.error("[v0] Profile update error:", error)
     }
 
     setLoading(false)

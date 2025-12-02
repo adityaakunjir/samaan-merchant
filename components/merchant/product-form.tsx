@@ -92,15 +92,17 @@ export function ProductForm({ merchantId, product }: ProductFormProps) {
     setLoading(true)
 
     const productData = {
-      merchant_id: merchantId,
+      merchantId: merchantId,
       name: formData.name,
       description: formData.description || null,
       price: Number.parseFloat(formData.price),
       stock: Number.parseInt(formData.stock),
       category: formData.category || null,
-      image_url: formData.image_url || null,
-      is_active: formData.is_active,
+      imageUrl: formData.image_url || null,
+      isActive: formData.is_active,
     }
+
+    console.log("[v0] Submitting product:", productData)
 
     try {
       if (isEditing && product) {
@@ -110,9 +112,9 @@ export function ProductForm({ merchantId, product }: ProductFormProps) {
       }
       router.push("/merchant/products")
       router.refresh()
-    } catch (error) {
-      alert("Failed to save product")
-      console.error(error)
+    } catch (error: any) {
+      alert(`Failed to save product: ${error.message}`)
+      console.error("[v0] Product save error:", error)
       setLoading(false)
     }
   }
