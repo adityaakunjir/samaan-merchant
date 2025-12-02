@@ -2,11 +2,13 @@
 
 import type React from "react"
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 import { authAPI, ordersAPI, getUser } from "@/lib/api/client"
 import { MerchantSidebar } from "@/components/merchant/sidebar"
 import { MerchantMobileNav } from "@/components/merchant/mobile-nav"
 import { Loader2 } from "lucide-react"
+
+const AUTH_PAGES = ["/merchant/login", "/merchant/signup", "/merchant/verify-otp", "/merchant/signup-success"]
 
 export default function MerchantLayout({
   children,
@@ -18,8 +20,16 @@ export default function MerchantLayout({
   const [userEmail, setUserEmail] = useState("")
   const [pendingOrdersCount, setPendingOrdersCount] = useState(0)
   const router = useRouter()
+  const pathname = usePathname()
+
+  const isAuthPage = AUTH_PAGES.some((page) => pathname?.startsWith(page))
 
   useEffect(() => {
+    if (isAuthPage) {
+      setLoading(false)
+      return
+    }
+
     const checkAuth = async () => {
       // Check if user is authenticated
       if (!authAPI.isAuthenticated()) {
@@ -49,7 +59,6 @@ export default function MerchantLayout({
         const pending = orders.filter((o: any) => ["Placed", "Confirmed", "Packed"].includes(o.status)).length
         setPendingOrdersCount(pending)
       } catch (error) {
-        // Ignore errors - might not have orders yet
         console.log("Could not fetch orders:", error)
       }
 
@@ -57,7 +66,11 @@ export default function MerchantLayout({
     }
 
     checkAuth()
-  }, [router])
+  }, [router, isAuthPage, pathname])
+
+  if (isAuthPage) {
+    return <>{children}</>
+  }
 
   if (loading) {
     return (
