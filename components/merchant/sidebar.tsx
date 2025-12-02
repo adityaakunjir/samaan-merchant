@@ -3,7 +3,7 @@
 import Link from "next/link"
 import Image from "next/image"
 import { usePathname, useRouter } from "next/navigation"
-import { createClient } from "@/lib/supabase/client"
+import { authAPI } from "@/lib/api/client"
 import {
   LayoutDashboard,
   Package,
@@ -24,7 +24,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import type { Merchant } from "@/lib/types"
 
 const navItems = [
   { href: "/merchant", icon: LayoutDashboard, label: "Dashboard" },
@@ -34,7 +33,7 @@ const navItems = [
 ]
 
 interface MerchantSidebarProps {
-  merchant: Merchant | null
+  merchant: any
   userEmail: string
   pendingOrdersCount?: number
 }
@@ -42,12 +41,10 @@ interface MerchantSidebarProps {
 export function MerchantSidebar({ merchant, userEmail, pendingOrdersCount = 0 }: MerchantSidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
-  const supabase = createClient()
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut()
+  const handleLogout = () => {
+    authAPI.logout()
     router.push("/merchant/login")
-    router.refresh()
   }
 
   return (

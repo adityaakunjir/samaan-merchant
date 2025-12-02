@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { usePathname, useRouter } from "next/navigation"
-import { createClient } from "@/lib/supabase/client"
+import { authAPI } from "@/lib/api/client"
 import {
   LayoutDashboard,
   Package,
@@ -20,7 +20,6 @@ import {
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import type { Merchant } from "@/lib/types"
 
 const navItems = [
   { href: "/merchant", icon: LayoutDashboard, label: "Dashboard", shortLabel: "Home" },
@@ -30,7 +29,7 @@ const navItems = [
 ]
 
 interface MerchantMobileNavProps {
-  merchant: Merchant | null
+  merchant: any
   userEmail: string
   pendingOrdersCount?: number
 }
@@ -40,7 +39,6 @@ export function MerchantMobileNav({ merchant, userEmail, pendingOrdersCount = 0 
   const [scrolled, setScrolled] = useState(false)
   const pathname = usePathname()
   const router = useRouter()
-  const supabase = createClient()
 
   useEffect(() => {
     const handleScroll = () => {
@@ -50,10 +48,9 @@ export function MerchantMobileNav({ merchant, userEmail, pendingOrdersCount = 0 
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut()
+  const handleLogout = () => {
+    authAPI.logout()
     router.push("/merchant/login")
-    router.refresh()
   }
 
   return (
