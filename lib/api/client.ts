@@ -172,3 +172,10 @@ export const ordersAPI = {
       body: JSON.stringify({ status }),
     }),
 }
+
+export const api = {
+  auth: authAPI,
+  products: productsAPI,
+  merchants: merchantsAPI,
+  orders: ordersAPI,
+}
