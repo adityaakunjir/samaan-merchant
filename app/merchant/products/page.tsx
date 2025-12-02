@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { api } from "@/lib/api/client"
+import { api, getToken, getUser } from "@/lib/api/client"
 import { ProductsList } from "@/components/merchant/products-list"
 import { Loader2 } from "lucide-react"
 
@@ -13,16 +13,15 @@ export default function ProductsPage() {
 
   useEffect(() => {
     const fetchProducts = async () => {
-      const token = localStorage.getItem("token")
-      const userStr = localStorage.getItem("user")
+      const token = getToken()
+      const user = getUser()
 
-      if (!token || !userStr) {
+      if (!token || !user) {
         router.push("/merchant/login")
         return
       }
 
       try {
-        const user = JSON.parse(userStr)
         const merchantId = user.merchantId || user.id
 
         // Fetch products for this merchant
