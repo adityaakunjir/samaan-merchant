@@ -75,8 +75,8 @@ export default function MerchantDashboardPage() {
               ...order,
               id: order.id,
               status: order.status?.toLowerCase(),
-              customer_name: order.customerName || order.customer_name,
-              total_amount: order.totalAmount || order.total_amount,
+              customer_name: order.customer?.fullName || order.customerName || order.customer_name,
+              total_amount: order.grandTotal || order.totalAmount || order.total_amount,
               created_at: order.createdAt || order.created_at,
               items: order.items || order.orderItems,
             }))

@@ -1,0 +1,17 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/merchant/layout,_N_T_/merchant/orders/layout,_N_T_/merchant/orders/[id]/layout,_N_T_/merchant/orders/[id]/page,_N_T_/merchant/orders/_fallback"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/merchant/orders/$d$id/__PAGE__",
+    "/merchant/orders/$d$id",
+    "/merchant/orders",
+    "/merchant",
+    "/_index",
+    "/_head"
+  ]
+}

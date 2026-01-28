@@ -94,11 +94,11 @@ export function OrdersList({ orders: initialOrders }: OrdersListProps) {
       const mappedOrders = (data || []).map((o: any) => ({
         id: o.id,
         merchant_id: o.merchantId,
-        customer_name: o.customerName || o.userName || "Customer",
-        customer_phone: o.customerPhone || o.userPhone,
-        customer_address: o.customerAddress || o.deliveryAddress,
+        customer_name: o.customer?.fullName || o.customerName || o.userName || "Customer",
+        customer_phone: o.customer?.phone || o.customerPhone || o.userPhone,
+        customer_address: o.deliveryAddress || o.customer?.address || o.customerAddress,
         status: o.status?.toLowerCase() || "new",
-        total_amount: o.totalAmount || o.total,
+        total_amount: o.grandTotal || o.totalAmount || o.total,
         items:
           o.items ||
           o.orderItems?.map((item: any) => ({
@@ -107,7 +107,7 @@ export function OrdersList({ orders: initialOrders }: OrdersListProps) {
             price: item.unitPrice || item.price,
           })) ||
           [],
-        notes: o.notes || o.specialInstructions,
+        notes: o.deliveryInstructions || o.notes || o.specialInstructions,
         created_at: o.createdAt || o.orderDate,
         updated_at: o.updatedAt,
       }))

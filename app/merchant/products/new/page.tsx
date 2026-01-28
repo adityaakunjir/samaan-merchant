@@ -23,7 +23,7 @@ export default function NewProductPage() {
       return
     }
 
-    setMerchantId(user.id)
+    setMerchantId(user.merchantId)
     setLoading(false)
   }, [router])
 

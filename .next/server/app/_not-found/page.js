@@ -1,0 +1,13 @@
+var R=require("../../chunks/ssr/[turbopack]_runtime.js")("server/app/_not-found/page.js")
+R.c("server/chunks/ssr/Samaan_SamaanMerchant_035b0f26._.js")
+R.c("server/chunks/ssr/[root-of-the-server]__fac22950._.js")
+R.c("server/chunks/ssr/3e5d6_next_dist_esm_build_templates_app-page_8877f2db.js")
+R.c("server/chunks/ssr/[root-of-the-server]__442984c0._.js")
+R.c("server/chunks/ssr/[root-of-the-server]__80f09666._.js")
+R.c("server/chunks/ssr/[root-of-the-server]__e4ba5b96._.js")
+R.c("server/chunks/ssr/[root-of-the-server]__ea4871a5._.js")
+R.c("server/chunks/ssr/3e5d6_next_dist_client_components_ef6caaea._.js")
+R.c("server/chunks/ssr/3e5d6_next_dist_client_components_builtin_forbidden_bb28f690.js")
+R.c("server/chunks/ssr/Samaan_SamaanMerchant__next-internal_server_app__not-found_page_actions_e9a2cc60.js")
+R.m(90016)
+module.exports=R.m(90016).exports

@@ -1,0 +1,3 @@
+{
+  "/merchant/orders/[id]/page": "app/merchant/orders/[id]/page.js"
+}

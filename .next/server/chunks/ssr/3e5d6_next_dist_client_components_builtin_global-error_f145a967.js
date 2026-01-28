@@ -1,0 +1,3 @@
+module.exports=[67432,(a,b,c)=>{let{createClientModuleProxy:d}=a.r(32249);a.n(d("[project]/Samaan/SamaanMerchant/node_modules/next/dist/client/components/builtin/global-error.js <module evaluation>"))},58448,(a,b,c)=>{let{createClientModuleProxy:d}=a.r(32249);a.n(d("[project]/Samaan/SamaanMerchant/node_modules/next/dist/client/components/builtin/global-error.js"))},50626,a=>{"use strict";a.i(67432);var b=a.i(58448);a.n(b)}];
+
+//# sourceMappingURL=3e5d6_next_dist_client_components_builtin_global-error_f145a967.js.map

@@ -22,22 +22,22 @@ import {
   Loader2,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import type { Order } from "@/lib/types"
+import type { Order, OrderStatus } from "@/lib/types"
 
 interface OrderDetailProps {
   order: Order
 }
 
-const statusConfig = {
-  new: { icon: Bell, color: "bg-blue-100 text-blue-700", label: "New Order" },
-  confirmed: { icon: CheckCircle, color: "bg-yellow-100 text-yellow-700", label: "Confirmed" },
-  packed: { icon: Package, color: "bg-purple-100 text-purple-700", label: "Packed" },
-  ready: { icon: Truck, color: "bg-green-100 text-green-700", label: "Ready for Pickup" },
-  delivered: { icon: CheckCircle, color: "bg-gray-100 text-gray-600", label: "Delivered" },
-  cancelled: { icon: XCircle, color: "bg-red-100 text-red-700", label: "Cancelled" },
+const statusConfig: Record<OrderStatus, { icon: typeof Bell; color: string; label: string }> = {
+  "Placed": { icon: Bell, color: "bg-blue-100 text-blue-700", label: "New Order" },
+  "Confirmed": { icon: CheckCircle, color: "bg-yellow-100 text-yellow-700", label: "Confirmed" },
+  "Preparing": { icon: Package, color: "bg-purple-100 text-purple-700", label: "Preparing" },
+  "Out for Delivery": { icon: Truck, color: "bg-green-100 text-green-700", label: "Out for Delivery" },
+  "Delivered": { icon: CheckCircle, color: "bg-gray-100 text-gray-600", label: "Delivered" },
+  "Cancelled": { icon: XCircle, color: "bg-red-100 text-red-700", label: "Cancelled" },
 }
 
-const statusFlow = ["new", "confirmed", "packed", "ready", "delivered"]
+const statusFlow: OrderStatus[] = ["Placed", "Confirmed", "Preparing", "Out for Delivery", "Delivered"]
 
 export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
   const [order, setOrder] = useState(initialOrder)
@@ -55,7 +55,7 @@ export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
 
     try {
       await ordersAPI.updateStatus(order.id, newStatus)
-      setOrder((prev) => ({ ...prev, status: newStatus as Order["status"] }))
+      setOrder((prev) => ({ ...prev, status: newStatus as OrderStatus }))
       router.refresh()
     } catch (error) {
       console.error("Error updating status:", error)
@@ -69,12 +69,12 @@ export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
     setAddingNote(true)
 
     // For now, update locally
-    const existingNotes = order.notes || ""
+    const existingNotes = order.deliveryInstructions || ""
     const newNotes = existingNotes
       ? `${existingNotes}\n[${new Date().toLocaleString()}] ${internalNote}`
       : `[${new Date().toLocaleString()}] ${internalNote}`
 
-    setOrder((prev) => ({ ...prev, notes: newNotes }))
+    setOrder((prev) => ({ ...prev, deliveryInstructions: newNotes }))
     setInternalNote("")
     setAddingNote(false)
   }
@@ -90,7 +90,7 @@ export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
           <h1 className="text-2xl font-bold text-gray-900">Order #{order.id.slice(0, 8).toUpperCase()}</h1>
           <p className="text-gray-500 flex items-center gap-2 mt-1">
             <Clock className="w-4 h-4" />
-            {new Date(order.created_at).toLocaleString()}
+            {order.createdAt ? new Date(order.createdAt).toLocaleString() : 'Invalid Date'}
           </p>
         </div>
         <Badge className={cn("rounded-full text-sm px-3 py-1", config.color)}>
@@ -100,13 +100,13 @@ export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
       </div>
 
       {/* Status Timeline */}
-      {order.status !== "cancelled" && (
+      {order.status !== "Cancelled" && (
         <Card className="p-4 bg-white rounded-2xl border-0 shadow-sm">
           <div className="flex items-center justify-between">
             {statusFlow.map((status, index) => {
               const isCompleted = index <= currentIndex
               const isCurrent = index === currentIndex
-              const StatusIconItem = statusConfig[status as keyof typeof statusConfig].icon
+              const StatusIconItem = statusConfig[status].icon
 
               return (
                 <div key={status} className="flex-1 flex flex-col items-center relative">
@@ -146,24 +146,24 @@ export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
       <Card className="p-6 bg-white rounded-2xl border-0 shadow-sm">
         <h3 className="font-semibold text-gray-900 mb-4">Customer Information</h3>
         <div className="space-y-3">
-          <p className="font-medium text-gray-900 text-lg">{order.customer_name}</p>
-          {order.customer_phone && (
+          <p className="font-medium text-gray-900 text-lg">{order.customer?.fullName || 'Unknown Customer'}</p>
+          {order.customer?.phone && (
             <a
-              href={`tel:${order.customer_phone}`}
+              href={`tel:${order.customer.phone}`}
               className="flex items-center gap-3 text-gray-600 hover:text-[#FF7F32]"
             >
               <div className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center">
                 <Phone className="w-5 h-5" />
               </div>
-              {order.customer_phone}
+              {order.customer.phone}
             </a>
           )}
-          {order.customer_address && (
+          {order.deliveryAddress && (
             <div className="flex items-start gap-3 text-gray-600">
               <div className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center shrink-0">
                 <MapPin className="w-5 h-5" />
               </div>
-              <span className="pt-2">{order.customer_address}</span>
+              <span className="pt-2">{order.deliveryAddress}</span>
             </div>
           )}
         </div>
@@ -176,17 +176,17 @@ export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
           {order.items?.map((item: any, i: number) => (
             <div key={i} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
               <div>
-                <p className="font-medium text-gray-900">{item.name}</p>
+                <p className="font-medium text-gray-900">{item.productName || item.name}</p>
                 <p className="text-sm text-gray-500">
-                  ₹{item.price} × {item.quantity}
+                  ₹{item.unitPrice || item.price} × {item.quantity}
                 </p>
               </div>
-              <p className="font-semibold text-gray-900">₹{(item.price * item.quantity).toFixed(0)}</p>
+              <p className="font-semibold text-gray-900">₹{item.total || ((item.unitPrice || item.price) * item.quantity).toFixed(0)}</p>
             </div>
           ))}
           <div className="flex items-center justify-between pt-4 border-t-2 border-gray-200">
             <p className="font-bold text-lg text-gray-900">Total</p>
-            <p className="font-bold text-xl text-[#FF7F32]">₹{Number(order.total_amount).toFixed(0)}</p>
+            <p className="font-bold text-xl text-[#FF7F32]">₹{Number(order.grandTotal || 0).toFixed(0)}</p>
           </div>
         </div>
       </Card>
@@ -197,9 +197,9 @@ export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
           <FileText className="w-5 h-5" />
           Notes
         </h3>
-        {order.notes && (
+        {order.deliveryInstructions && (
           <div className="bg-yellow-50 rounded-xl p-4 mb-4 whitespace-pre-line text-sm text-gray-700">
-            {order.notes}
+            {order.deliveryInstructions}
           </div>
         )}
         <div className="flex gap-2">
@@ -220,7 +220,7 @@ export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
       </Card>
 
       {/* Actions */}
-      {order.status !== "delivered" && order.status !== "cancelled" && (
+      {order.status !== "Delivered" && order.status !== "Cancelled" && (
         <Card className="p-6 bg-white rounded-2xl border-0 shadow-sm">
           <h3 className="font-semibold text-gray-900 mb-4">Actions</h3>
           <div className="flex flex-wrap gap-3">
@@ -233,13 +233,13 @@ export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
                 {updating ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
                 ) : (
-                  `Mark as ${statusConfig[statusFlow[currentIndex + 1] as keyof typeof statusConfig].label}`
+                  `Mark as ${statusConfig[statusFlow[currentIndex + 1]].label}`
                 )}
               </Button>
             )}
             <Button
               variant="outline"
-              onClick={() => updateStatus("cancelled")}
+              onClick={() => updateStatus("Cancelled")}
               disabled={updating}
               className="h-12 rounded-xl text-red-600 hover:bg-red-50 hover:text-red-700"
             >
