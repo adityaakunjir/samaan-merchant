@@ -1,5 +1,5 @@
 // API Client for .NET Backend
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://samaan-api.azurewebsites.net/api"
+const API_BASE_URL = "https://samaan-api.azurewebsites.net/api"
 
 // Token management
 export const getToken = (): string | null => {
