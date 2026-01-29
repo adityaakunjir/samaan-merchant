@@ -1,6 +1,0 @@
-{
-  "version": 3,
-  "sources": [],
-  "sections": [
-    {"offset": {"line": 16, "column": 0}, "map": {"version":3,"sources":["turbopack:///[project]/Samaan/SamaanMerchant/middleware.ts"],"sourcesContent":["import { NextResponse, type NextRequest } from \"next/server\"\r\n\r\nexport async function middleware(request: NextRequest) {\r\n  // For .NET API authentication, we use JWT tokens stored in localStorage\r\n  // Auth protection is handled at the page/component level\r\n  // This middleware just passes requests through\r\n  return NextResponse.next()\r\n}\r\n\r\nexport const config = {\r\n  matcher: [\"/((?!_next/static|_next/image|favicon.ico|.*\\\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)\"],\r\n}\r\n"],"names":[],"mappings":";;;;;;AAAA;AAAA;;AAEO,eAAe,WAAW,OAAoB;IACnD,wEAAwE;IACxE,yDAAyD;IACzD,+CAA+C;IAC/C,OAAO,4NAAY,CAAC,IAAI;AAC1B;AAEO,MAAM,SAAS;IACpB,SAAS;QAAC;KAAoF;AAChG"}}]
-}
