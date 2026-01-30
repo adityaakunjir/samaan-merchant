@@ -15,47 +15,40 @@ export default function OrderDetailClient() {
     const [order, setOrder] = useState<Order | null>(null)
 
     useEffect(() => {
-        useEffect(() => {
-            const loadData = async () => {
-                // Remove pre-emptive check to avoid race conditions - let the API call decide
-                try {
-                    const orderData = await ordersAPI.getById(id)
-                    if (!orderData) {
-                        notFound()
-                        return
-                    }
+        return
+    }
                     setOrder(orderData)
                 } catch (error: any) {
-                    console.error("Error loading order:", error)
-                    if (error.status === 401) {
-                        // Only redirect if explicitly unauthorized by backend
-                        router.push("/merchant/login")
-                    } else {
-                        notFound()
-                    }
-                } finally {
-                    setLoading(false)
-                }
+    console.error("Error loading order:", error)
+    if (error.status === 401) {
+        // Only redirect if explicitly unauthorized by backend
+        router.push("/merchant/login")
+    } else {
+        notFound()
+    }
+} finally {
+    setLoading(false)
+}
             }
 
-            loadData()
+loadData()
         }, [id, router])
 
-        if (loading) {
-            return (
-                <div className="flex items-center justify-center min-h-[400px]">
-                    <Loader2 className="h-8 w-8 animate-spin text-[#F97316]" />
-                </div>
-            )
-        }
+if (loading) {
+    return (
+        <div className="flex items-center justify-center min-h-[400px]">
+            <Loader2 className="h-8 w-8 animate-spin text-[#F97316]" />
+        </div>
+    )
+}
 
-        if (!order) {
-            return notFound()
-        }
+if (!order) {
+    return notFound()
+}
 
-        return (
-            <div className="max-w-2xl mx-auto pb-20 lg:pb-0">
-                <OrderDetail order={order} />
-            </div>
-        )
+return (
+    <div className="max-w-2xl mx-auto pb-20 lg:pb-0">
+        <OrderDetail order={order} />
+    </div>
+)
     }
