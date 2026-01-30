@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JWT Token Inspector</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #FF7F32;
+            margin-bottom: 20px;
+        }
+        .token-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+            word-wrap: break-word;
+        }
+        .claim {
+            padding: 8px;
+            margin: 5px 0;
+            background: #e9ecef;
+            border-left: 3px solid #FF7F32;
+        }
+        .error {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .success {
+            color: #28a745;
+            font-weight: bold;
+        }
+        button {
+            background: #FF7F32;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+        button:hover {
+            background: #e66a1f;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 JWT Token Inspector</h1>
+        <p>This tool will inspect your current JWT token from localStorage.</p>
+        
+        <button onclick="inspectToken()">Inspect Current Token</button>
+        
+        <div id="result"></div>
+    </div>
+
+    <script>
+        function parseJwt(token) {
+            try {
+                const base64Url = token.split('.')[1];
+                const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+                const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+                    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+                }).join(''));
+                return JSON.parse(jsonPayload);
+            } catch (e) {
+                return null;
+            }
+        }
+
+        function inspectToken() {
+            const resultDiv = document.getElementById('result');
+            const token = localStorage.getItem('authToken');
+            const user = localStorage.getItem('user');
+            
+            if (!token) {
+                resultDiv.innerHTML = '<div class="token-info error">❌ No token found in localStorage!</div>';
+                return;
+            }
+
+            resultDiv.innerHTML = '<h2>Token Found! ✅</h2>';
+            
+            const decoded = parseJwt(token);
+            if (!decoded) {
+                resultDiv.innerHTML += '<div class="token-info error">❌ Failed to decode token</div>';
+                return;
+            }
+
+            // Check expiration
+            const now = Math.floor(Date.now() / 1000);
+            const isExpired = decoded.exp && decoded.exp < now;
+            
+            resultDiv.innerHTML += `
+                <h3>Token Status:</h3>
+                <div class="token-info ${isExpired ? 'error' : 'success'}">
+                    ${isExpired ? '❌ TOKEN IS EXPIRED!' : '✅ Token is valid'}
+                </div>
+            `;
+
+            if (decoded.exp) {
+                const expDate = new Date(decoded.exp * 1000);
+                resultDiv.innerHTML += `
+                    <div class="token-info">
+                        <strong>Expires:</strong> ${expDate.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}
+                    </div>
+                `;
+            }
+
+            // Check required claims
+            resultDiv.innerHTML += '<h3>Token Claims:</h3>';
+            
+            const requiredClaims = ['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier', 
+                                   'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/role',
+                                   'MerchantId'];
+            
+            let hasAllClaims = true;
+            
+            requiredClaims.forEach(claim => {
+                const value = decoded[claim];
+                const hasClaim = value !== undefined && value !== null;
+                hasAllClaims = hasAllClaims && hasClaim;
+                
+                resultDiv.innerHTML += `
+                    <div class="claim ${hasClaim ? 'success' : 'error'}">
+                        ${hasClaim ? '✅' : '❌'} <strong>${claim.split('/').pop()}:</strong> ${value || 'MISSING!'}
+                    </div>
+                `;
+            });
+
+            // Show all claims
+            resultDiv.innerHTML += '<h3>All Claims:</h3>';
+            resultDiv.innerHTML += '<div class="token-info"><pre>' + JSON.stringify(decoded, null, 2) + '</pre></div>';
+
+            // Show user data
+            if (user) {
+                resultDiv.innerHTML += '<h3>Stored User Data:</h3>';
+                resultDiv.innerHTML += '<div class="token-info"><pre>' + JSON.stringify(JSON.parse(user), null, 2) + '</pre></div>';
+            }
+
+            // Summary
+            resultDiv.innerHTML += `
+                <h3>Summary:</h3>
+                <div class="token-info ${hasAllClaims && !isExpired ? 'success' : 'error'}">
+                    ${hasAllClaims && !isExpired ? 
+                        '✅ Token looks good! The issue might be with the API endpoint.' : 
+                        '❌ Token has issues that need to be fixed.'}
+                </div>
+            `;
+        }
+
+        // Auto-inspect on load
+        window.onload = function() {
+            // Wait a moment for the page to fully load
+            setTimeout(inspectToken, 100);
+        };
+    </script>
+</body>
+</html>

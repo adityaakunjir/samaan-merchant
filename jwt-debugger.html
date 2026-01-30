@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JWT Token Debugger for Samaan Merchant</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #FDF8F3 0%, #fff5e6 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: #FF7F32;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            background: linear-gradient(to right, #FF7F32, #ea580c);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(255, 127, 50, 0.3);
+        }
+
+        .btn-secondary {
+            background: #f3f4f6;
+            color: #374151;
+            margin-left: 10px;
+        }
+
+        .btn-secondary:hover {
+            background: #e5e7eb;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .output {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 16px;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-break: break-all;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .success {
+            border-left: 4px solid #10b981;
+            background: #f0fdf4;
+        }
+
+        .error {
+            border-left: 4px solid #ef4444;
+            background: #fef2f2;
+            color: #991b1b;
+        }
+
+        .warning {
+            border-left: 4px solid #f59e0b;
+            background: #fffbeb;
+            color: #92400e;
+        }
+
+        .info {
+            border-left: 4px solid #3b82f6;
+            background: #eff6ff;
+            color: #1e40af;
+        }
+
+        label {
+            display: block;
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 8px;
+        }
+
+        input,
+        textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: 'Monaco', 'Courier New', monospace;
+        }
+
+        textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .highlight {
+            background: #fef3c7;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-weight: 600;
+        }
+
+        .json-key {
+            color: #7c3aed;
+            font-weight: 600;
+        }
+
+        .json-value {
+            color: #059669;
+        }
+
+        .json-string {
+            color: #dc2626;
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1f2937;
+            margin: 20px 0 10px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-right: 8px;
+        }
+
+        .badge-success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .badge-warning {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .badge-error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🔍 JWT Token Debugger</h1>
+        <p class="subtitle">Debug authentication issues for Samaan Merchant</p>
+
+        <div class="card">
+            <h3>Option 1: Auto-load from LocalStorage</h3>
+            <p style="color: #6b7280; margin-bottom: 16px;">This will read the authToken from your browser's
+                localStorage (if you're logged in)</p>
+            <button class="btn" onclick="loadFromLocalStorage()">Load Token from LocalStorage</button>
+            <button class="btn btn-secondary" onclick="showUserData()">Show User Data</button>
+            <div id="localStorage-output"></div>
+        </div>
+
+        <div class="card">
+            <h3>Option 2: Paste Token Manually</h3>
+            <label for="token-input">JWT Token:</label>
+            <textarea id="token-input" placeholder="Paste your JWT token here..."></textarea>
+            <button class="btn" onclick="decodeManualToken()" style="margin-top: 12px;">Decode Token</button>
+            <div id="manual-output"></div>
+        </div>
+
+        <div class="card">
+            <h3>📚 Understanding JWT Tokens</h3>
+            <p style="color: #6b7280; line-height: 1.6;">
+                JWT tokens have 3 parts separated by dots: <br>
+                <strong>Header.Payload.Signature</strong><br><br>
+                The <span class="highlight">Payload</span> contains your user data and claims (like role, email, etc).
+                We'll focus on that to debug your authentication issue.
+            </p>
+        </div>
+    </div>
+
+    <script>
+        function base64UrlDecode(str) {
+            // Replace URL-safe characters
+            str = str.replace(/-/g, '+').replace(/_/g, '/');
+
+            // Pad with '=' if needed
+            const pad = str.length % 4;
+            if (pad) {
+                str += '='.repeat(4 - pad);
+            }
+
+            try {
+                return decodeURIComponent(escape(atob(str)));
+            } catch (e) {
+                return atob(str);
+            }
+        }
+
+        function decodeJWT(token) {
+            try {
+                const parts = token.split('.');
+
+                if (parts.length !== 3) {
+                    return {
+                        error: 'Invalid JWT format. Expected 3 parts (Header.Payload.Signature), got ' + parts.length
+                    };
+                }
+
+                const header = JSON.parse(base64UrlDecode(parts[0]));
+                const payload = JSON.parse(base64UrlDecode(parts[1]));
+
+                // Check expiration
+                let expirationStatus = 'No expiration set';
+                if (payload.exp) {
+                    const expDate = new Date(payload.exp * 1000);
+                    const now = new Date();
+                    const isExpired = expDate < now;
+                    const timeLeft = expDate - now;
+                    const daysLeft = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
+                    const hoursLeft = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                    const minutesLeft = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+
+                    if (isExpired) {
+                        expirationStatus = `⚠️ EXPIRED on ${expDate.toLocaleString()}`;
+                    } else {
+                        expirationStatus = `✅ Valid until ${expDate.toLocaleString()} (${daysLeft}d ${hoursLeft}h ${minutesLeft}m left)`;
+                    }
+                }
+
+                // Look for role claims (different possible keys)
+                const roleClaims = [];
+                const commonRoleKeys = [
+                    'role',
+                    'roles',
+                    'http://schemas.microsoft.com/ws/2008/06/identity/claims/role',
+                    'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/role'
+                ];
+
+                for (const key of commonRoleKeys) {
+                    if (payload[key]) {
+                        roleClaims.push({ key, value: payload[key] });
+                    }
+                }
+
+                return {
+                    header,
+                    payload,
+                    expirationStatus,
+                    roleClaims,
+                    signature: parts[2]
+                };
+            } catch (e) {
+                return {
+                    error: 'Failed to decode JWT: ' + e.message
+                };
+            }
+        }
+
+        function formatJSON(obj, indent = 0) {
+            let html = '';
+            const spacing = '  '.repeat(indent);
+
+            if (typeof obj === 'object' && obj !== null) {
+                if (Array.isArray(obj)) {
+                    html += '[\n';
+                    obj.forEach((item, i) => {
+                        html += spacing + '  ' + formatJSON(item, indent + 1);
+                        if (i < obj.length - 1) html += ',';
+                        html += '\n';
+                    });
+                    html += spacing + ']';
+                } else {
+                    html += '{\n';
+                    const keys = Object.keys(obj);
+                    keys.forEach((key, i) => {
+                        html += spacing + '  <span class="json-key">"' + key + '"</span>: ';
+                        html += formatJSON(obj[key], indent + 1);
+                        if (i < keys.length - 1) html += ',';
+                        html += '\n';
+                    });
+                    html += spacing + '}';
+                }
+            } else if (typeof obj === 'string') {
+                html += '<span class="json-string">"' + obj + '"</span>';
+            } else {
+                html += '<span class="json-value">' + JSON.stringify(obj) + '</span>';
+            }
+
+            return html;
+        }
+
+        function displayDecodedToken(decoded, outputId) {
+            const output = document.getElementById(outputId);
+
+            if (decoded.error) {
+                output.innerHTML = `<div class="output error">
+                    <strong>❌ Error:</strong><br>${decoded.error}
+                </div>`;
+                return;
+            }
+
+            let html = '<div class="output success">';
+
+            html += '<div class="section-title">🎫 Token Status</div>';
+            html += `<div>${decoded.expirationStatus}</div><br>`;
+
+            html += '<div class="section-title">🔑 Role Claims Found</div>';
+            if (decoded.roleClaims.length === 0) {
+                html += '<div class="warning">⚠️ <strong>WARNING:</strong> No role claims found! This might be why you\'re getting 401 errors.</div><br>';
+            } else {
+                decoded.roleClaims.forEach(claim => {
+                    html += `<div><span class="badge badge-success">✓</span><strong>${claim.key}:</strong> ${JSON.stringify(claim.value)}</div>`;
+                });
+                html += '<br>';
+            }
+
+            html += '<div class="section-title">📄 Header</div>';
+            html += '<div style="background: #f9fafb; padding: 12px; border-radius: 6px; margin-bottom: 16px;">';
+            html += formatJSON(decoded.header);
+            html += '</div>';
+
+            html += '<div class="section-title">📦 Payload (User Data & Claims)</div>';
+            html += '<div style="background: #f9fafb; padding: 12px; border-radius: 6px;">';
+            html += formatJSON(decoded.payload);
+            html += '</div>';
+
+            html += '</div>';
+
+            output.innerHTML = html;
+        }
+
+        function loadFromLocalStorage() {
+            const token = localStorage.getItem('authToken');
+            const output = document.getElementById('localStorage-output');
+
+            if (!token) {
+                output.innerHTML = '<div class="output error">❌ No authToken found in localStorage. Are you logged in?</div>';
+                return;
+            }
+
+            const decoded = decodeJWT(token);
+            displayDecodedToken(decoded, 'localStorage-output');
+        }
+
+        function showUserData() {
+            const output = document.getElementById('localStorage-output');
+            const user = localStorage.getItem('user');
+
+            if (!user) {
+                output.innerHTML = '<div class="output error">❌ No user data found in localStorage</div>';
+                return;
+            }
+
+            try {
+                const userData = JSON.parse(user);
+                let html = '<div class="output info">';
+                html += '<div class="section-title">👤 User Data in LocalStorage</div>';
+                html += '<div style="background: #f9fafb; padding: 12px; border-radius: 6px;">';
+                html += formatJSON(userData);
+                html += '</div></div>';
+                output.innerHTML = html;
+            } catch (e) {
+                output.innerHTML = '<div class="output error">❌ Failed to parse user data: ' + e.message + '</div>';
+            }
+        }
+
+        function decodeManualToken() {
+            const token = document.getElementById('token-input').value.trim();
+
+            if (!token) {
+                document.getElementById('manual-output').innerHTML = '<div class="output error">❌ Please paste a JWT token</div>';
+                return;
+            }
+
+            const decoded = decodeJWT(token);
+            displayDecodedToken(decoded, 'manual-output');
+        }
+    </script>
+</body>
+
+</html>

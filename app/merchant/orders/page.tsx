@@ -1,29 +1,31 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { api, getToken, getUser } from "@/lib/api/client"
+import { useRouter, useSearchParams } from "next/navigation"
+import { api, getToken, getUser, ordersAPI } from "@/lib/api/client"
 import { OrdersList } from "@/components/merchant/orders-list"
-import { Loader2 } from "lucide-react"
+import { OrderDetail } from "@/components/merchant/order-detail"
+import { Loader2, ArrowLeft } from "lucide-react"
+import { Button } from "@/components/ui/button"
 
 export default function OrdersPage() {
   const [orders, setOrders] = useState<any[]>([])
+  const [selectedOrder, setSelectedOrder] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const orderId = searchParams.get("id")
 
   useEffect(() => {
-    const fetchOrders = async () => {
+    const fetchData = async () => {
       const token = getToken()
       const user = getUser()
 
       console.log("[Orders Page] ========== AUTH DEBUG ==========")
       console.log("[Orders Page] Token exists:", !!token)
-      console.log("[Orders Page] Token length:", token?.length)
-      console.log("[Orders Page] Token preview:", token ? `${token.substring(0, 30)}...` : "none")
       console.log("[Orders Page] User:", user)
-      console.log("[Orders Page] User role:", user?.role)
-      console.log("[Orders Page] User merchantId:", user?.merchantId)
+      console.log("[Orders Page] Order ID from query:", orderId)
       console.log("[Orders Page] =========================================")
 
       if (!token || !user) {
@@ -33,7 +35,39 @@ export default function OrdersPage() {
       }
 
       try {
-        // Fetch orders for this merchant
+        // If we have an order ID, fetch that specific order
+        if (orderId) {
+          console.log("[Orders Page] Fetching specific order:", orderId)
+          const orderData = await ordersAPI.getById(orderId)
+          console.log("[Orders Page] Received order:", orderData)
+
+          if (orderData) {
+            // Map to component format
+            const mappedOrder = {
+              id: orderData.id,
+              orderNumber: orderData.orderNumber,
+              status: orderData.status?.toLowerCase() || "new",
+              customer: orderData.customer,
+              customerName: orderData.customer?.fullName || orderData.customerName || "Customer",
+              customerPhone: orderData.customer?.phone || "",
+              deliveryAddress: orderData.deliveryAddress || "",
+              deliveryInstructions: orderData.deliveryInstructions || "",
+              items: orderData.items || orderData.orderItems || [],
+              itemsTotal: orderData.itemsTotal || 0,
+              deliveryFee: orderData.deliveryFee || 25,
+              discount: orderData.discount || 0,
+              grandTotal: orderData.grandTotal || orderData.totalAmount || 0,
+              paymentMethod: orderData.paymentMethod || "COD",
+              paymentStatus: orderData.paymentStatus || "Pending",
+              createdAt: orderData.createdAt,
+              updatedAt: orderData.updatedAt,
+              estimatedDelivery: orderData.estimatedDelivery || "15-20 mins",
+            }
+            setSelectedOrder(mappedOrder)
+          }
+        }
+
+        // Also fetch all orders for the list
         console.log("[Orders Page] Fetching merchant orders...")
         const data = await api.orders.getMerchantOrders()
         console.log("[Orders Page] Received orders:", data)
@@ -81,8 +115,12 @@ export default function OrdersPage() {
       }
     }
 
-    fetchOrders()
-  }, [router])
+    fetchData()
+  }, [router, orderId])
+
+  const handleBack = () => {
+    router.push("/merchant/orders")
+  }
 
   if (loading) {
     return (
@@ -98,6 +136,25 @@ export default function OrdersPage() {
         <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
           <p className="text-red-800 font-medium mb-2">Error Loading Orders</p>
           <p className="text-red-600 text-sm">{error}</p>
+        </div>
+      </div>
+    )
+  }
+
+  // If we have a selected order (from query param), show order detail
+  if (orderId && selectedOrder) {
+    return (
+      <div className="pb-20 lg:pb-0">
+        <Button
+          variant="ghost"
+          onClick={handleBack}
+          className="mb-4 text-gray-600 hover:text-gray-900"
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Back to Orders
+        </Button>
+        <div className="max-w-2xl mx-auto">
+          <OrderDetail order={selectedOrder} />
         </div>
       </div>
     )

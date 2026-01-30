@@ -3,29 +3,14 @@
         {
             "route": "/proxy/*",
             "rewrite": "https://samaan-api.azurewebsites.net/api/*"
-        },
-        {
-            "route": "/merchant/orders/*",
-            "rewrite": "/merchant/orders/_fallback.html"
-        },
-        {
-            "route": "/merchant/products/*",
-            "rewrite": "/merchant/products.html"
         }
     ],
     "navigationFallback": {
         "rewrite": "/index.html",
         "exclude": [
-            "/images/*.{png,jpg,gif}",
+            "/images/*.{png,jpg,gif,svg,ico}",
             "/_next/*",
-            "/proxy/*",
-            "/merchant/orders/*",
-            "/merchant/products/*"
+            "/proxy/*"
         ]
-    },
-    "responseOverrides": {
-        "404": {
-            "rewrite": "/index.html"
-        }
     }
 }
