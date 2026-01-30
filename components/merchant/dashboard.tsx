@@ -102,7 +102,10 @@ export function MerchantDashboard({
   }
 
   const formatTime = (date: string) => {
-    const d = new Date(date)
+    // Ensure date is treated as UTC to fix "5h ago" timezone mismatch (IST is +5:30)
+    // If backend returns ISO string without 'Z', browser treats as local time
+    const dateStr = date.endsWith("Z") ? date : `${date}Z`
+    const d = new Date(dateStr)
     const now = new Date()
     const diff = now.getTime() - d.getTime()
     const mins = Math.floor(diff / 60000)

@@ -90,7 +90,7 @@ export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
           <h1 className="text-2xl font-bold text-gray-900">Order #{order.id.slice(0, 8).toUpperCase()}</h1>
           <p className="text-gray-500 flex items-center gap-2 mt-1">
             <Clock className="w-4 h-4" />
-            {order.createdAt ? new Date(order.createdAt).toLocaleString() : 'Invalid Date'}
+            {order.createdAt ? new Date(order.createdAt.endsWith("Z") ? order.createdAt : `${order.createdAt}Z`).toLocaleString() : 'Invalid Date'}
           </p>
         </div>
         <Badge className={cn("rounded-full text-sm px-3 py-1", config.color)}>
