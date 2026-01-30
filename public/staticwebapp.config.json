@@ -3,6 +3,10 @@
         {
             "route": "/proxy/*",
             "rewrite": "https://samaan-api.azurewebsites.net/api/*"
+        },
+        {
+            "route": "/merchant/orders/*",
+            "rewrite": "/merchant/orders/_fallback.html"
         }
     ],
     "navigationFallback": {
@@ -10,7 +14,8 @@
         "exclude": [
             "/images/*.{png,jpg,gif,svg,ico}",
             "/_next/*",
-            "/proxy/*"
+            "/proxy/*",
+            "*.html"
         ]
     }
 }
