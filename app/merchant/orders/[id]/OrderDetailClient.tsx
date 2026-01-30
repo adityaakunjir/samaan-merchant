@@ -15,45 +15,47 @@ export default function OrderDetailClient() {
     const [order, setOrder] = useState<Order | null>(null)
 
     useEffect(() => {
-        const loadData = async () => {
-            if (!authAPI.isAuthenticated()) {
-                router.push("/merchant/login")
-                return
+        useEffect(() => {
+            const loadData = async () => {
+                // Remove pre-emptive check to avoid race conditions - let the API call decide
+                try {
+                    const orderData = await ordersAPI.getById(id)
+                    if (!orderData) {
+                        notFound()
+                        return
+                    }
+                    setOrder(orderData)
+                } catch (error: any) {
+                    console.error("Error loading order:", error)
+                    if (error.status === 401) {
+                        // Only redirect if explicitly unauthorized by backend
+                        router.push("/merchant/login")
+                    } else {
+                        notFound()
+                    }
+                } finally {
+                    setLoading(false)
+                }
             }
 
-            try {
-                const orderData = await ordersAPI.getById(id)
-                if (!orderData) {
-                    notFound()
-                    return
-                }
-                setOrder(orderData)
-            } catch (error) {
-                console.error("Error loading order:", error)
-                notFound()
-            } finally {
-                setLoading(false)
-            }
+            loadData()
+        }, [id, router])
+
+        if (loading) {
+            return (
+                <div className="flex items-center justify-center min-h-[400px]">
+                    <Loader2 className="h-8 w-8 animate-spin text-[#F97316]" />
+                </div>
+            )
         }
 
-        loadData()
-    }, [id, router])
+        if (!order) {
+            return notFound()
+        }
 
-    if (loading) {
         return (
-            <div className="flex items-center justify-center min-h-[400px]">
-                <Loader2 className="h-8 w-8 animate-spin text-[#F97316]" />
+            <div className="max-w-2xl mx-auto pb-20 lg:pb-0">
+                <OrderDetail order={order} />
             </div>
         )
     }
-
-    if (!order) {
-        return notFound()
-    }
-
-    return (
-        <div className="max-w-2xl mx-auto pb-20 lg:pb-0">
-            <OrderDetail order={order} />
-        </div>
-    )
-}

@@ -74,7 +74,9 @@ async function fetchAPI(endpoint: string, options: RequestInit = {}) {
         errorMessage = errorText || errorMessage
       }
 
-      throw new Error(errorMessage)
+      const error = new Error(errorMessage) as any
+      error.status = response.status
+      throw error
     }
 
     const data = await response.json()
