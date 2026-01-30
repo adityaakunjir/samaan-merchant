@@ -1,0 +1,21 @@
+{
+    "routes": [
+        {
+            "route": "/proxy/*",
+            "rewrite": "https://samaan-api.azurewebsites.net/api/*"
+        }
+    ],
+    "navigationFallback": {
+        "rewrite": "/index.html",
+        "exclude": [
+            "/images/*.{png,jpg,gif}",
+            "/_next/*",
+            "/proxy/*"
+        ]
+    },
+    "responseOverrides": {
+        "404": {
+            "rewrite": "/index.html"
+        }
+    }
+}
