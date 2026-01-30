@@ -47,7 +47,7 @@ export function NotificationsList({ orders, lowStockProducts }: NotificationsLis
     read: order.status !== "new",
     icon: order.status === "new" ? ShoppingCart : CheckCircle,
     color: order.status === "new" ? "from-blue-500" : "from-green-500",
-    linkTo: `/merchant/orders/${order.id}`,
+    linkTo: `/merchant/orders?id=${order.id}`,
   }))
 
   const stockNotifications: Notification[] = lowStockProducts.map((product) => ({
@@ -59,7 +59,7 @@ export function NotificationsList({ orders, lowStockProducts }: NotificationsLis
     read: false,
     icon: AlertTriangle,
     color: "from-amber-500",
-    linkTo: `/merchant/products/${product.id}/edit`,
+    linkTo: `/merchant/products?edit=${product.id}`,
   }))
 
   const [notifications, setNotifications] = useState<Notification[]>(
