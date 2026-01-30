@@ -1,5 +1,6 @@
 "use client"
 
+import { Suspense } from "react"
 import { useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { api, getToken, getUser, ordersAPI } from "@/lib/api/client"
@@ -8,7 +9,7 @@ import { OrderDetail } from "@/components/merchant/order-detail"
 import { Loader2, ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
-export default function OrdersPage() {
+function OrdersContent() {
   const [orders, setOrders] = useState<any[]>([])
   const [selectedOrder, setSelectedOrder] = useState<any>(null)
   const [loading, setLoading] = useState(true)
@@ -103,7 +104,6 @@ export default function OrdersPage() {
         if (error.status === 401 || error.message?.includes("Unauthorized")) {
           console.error("[Orders Page] Authentication failed - token may be expired or invalid")
           setError("Authentication failed. Please log in again.")
-          // Only redirect after a delay to show the error message
           setTimeout(() => {
             router.push("/merchant/login")
           }, 2000)
@@ -164,5 +164,21 @@ export default function OrdersPage() {
     <div className="pb-20 lg:pb-0">
       <OrdersList orders={orders} />
     </div>
+  )
+}
+
+function LoadingFallback() {
+  return (
+    <div className="flex items-center justify-center min-h-[400px]">
+      <Loader2 className="w-8 h-8 animate-spin text-[#FF7F32]" />
+    </div>
+  )
+}
+
+export default function OrdersPage() {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <OrdersContent />
+    </Suspense>
   )
 }
