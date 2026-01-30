@@ -41,12 +41,12 @@ export function NotificationsList({ orders, lowStockProducts }: NotificationsLis
   const orderNotifications: Notification[] = orders.slice(0, 10).map((order) => ({
     id: order.id,
     type: "order",
-    title: order.status === "new" ? "New Order!" : `Order ${order.status}`,
-    message: `Order #${order.id.slice(0, 8).toUpperCase()} - ${order.customer_name} - ₹${Number(order.total_amount).toFixed(0)}`,
-    time: new Date(order.created_at).toLocaleString(),
-    read: order.status !== "new",
-    icon: order.status === "new" ? ShoppingCart : CheckCircle,
-    color: order.status === "new" ? "from-blue-500" : "from-green-500",
+    title: order.status === "Placed" ? "New Order!" : `Order ${order.status}`,
+    message: `Order #${order.id.slice(0, 8).toUpperCase()} - ${order.customer?.fullName || "Customer"} - ₹${Number(order.grandTotal).toFixed(0)}`,
+    time: new Date(order.createdAt).toLocaleString(),
+    read: order.status !== "Placed",
+    icon: order.status === "Placed" ? ShoppingCart : CheckCircle,
+    color: order.status === "Placed" ? "from-blue-500" : "from-green-500",
     linkTo: `/merchant/orders?id=${order.id}`,
   }))
 
