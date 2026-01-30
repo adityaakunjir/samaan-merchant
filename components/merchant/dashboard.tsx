@@ -264,7 +264,7 @@ export function MerchantDashboard({
           ) : (
             <div className="space-y-3 stagger-children">
               {pendingOrders.slice(0, 5).map((order) => (
-                <Link key={order.id} href={`/merchant/orders?id=${order.id}`}>
+                <Link key={order.id} href={`/merchant/orders/${order.id}`}>
                   <Card
                     className={cn(
                       "p-4 bg-white rounded-xl border-0 shadow-sm border-l-4 card-hover cursor-pointer touch-active",
