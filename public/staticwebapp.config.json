@@ -6,7 +6,13 @@
         },
         {
             "route": "/merchant/orders/*",
-            "rewrite": "/merchant/orders/_fallback.html"
+            "serve": "/merchant/orders/_fallback.html",
+            "statusCode": 200
+        },
+        {
+            "route": "/merchant/products/*",
+            "serve": "/merchant/products.html",
+            "statusCode": 200
         }
     ],
     "navigationFallback": {
@@ -14,7 +20,9 @@
         "exclude": [
             "/images/*.{png,jpg,gif}",
             "/_next/*",
-            "/proxy/*"
+            "/proxy/*",
+            "/merchant/orders/*",
+            "/merchant/products/*"
         ]
     },
     "responseOverrides": {
