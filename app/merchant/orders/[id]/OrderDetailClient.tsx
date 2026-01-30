@@ -1,8 +1,8 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useRouter, useParams } from "next/navigation"
-import { authAPI, ordersAPI } from "@/lib/api/client"
+import { useRouter } from "next/navigation"
+import { ordersAPI } from "@/lib/api/client"
 import { OrderDetail } from "@/components/merchant/order-detail"
 import { Loader2, Package, ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -10,23 +10,41 @@ import Link from "next/link"
 import type { Order } from "@/lib/types"
 
 export default function OrderDetailClient() {
-    const params = useParams()
-    const id = params.id as string
     const router = useRouter()
     const [loading, setLoading] = useState(true)
     const [order, setOrder] = useState<Order | null>(null)
     const [error, setError] = useState<string | null>(null)
+    const [orderId, setOrderId] = useState<string | null>(null)
 
     useEffect(() => {
-        const loadData = async () => {
-            // Skip loading for fallback route
-            if (id === '_fallback') {
-                setError("Invalid order ID")
-                setLoading(false)
-                return
-            }
+        // Extract order ID from the actual URL pathname
+        // Azure SWA rewrites /merchant/orders/* to /merchant/orders/_fallback.html
+        // but the browser URL still shows the actual order ID
+        // useParams() returns '_fallback' because it reads from the served HTML path
+        const extractOrderId = () => {
+            if (typeof window === 'undefined') return null
 
+            const pathname = window.location.pathname
+            // Match pattern: /merchant/orders/{uuid}
+            const match = pathname.match(/\/merchant\/orders\/([a-f0-9-]+)/i)
+            if (match && match[1] && match[1] !== '_fallback') {
+                return match[1]
+            }
+            return null
+        }
+
+        const id = extractOrderId()
+        setOrderId(id)
+
+        if (!id) {
+            setError("Invalid order ID")
+            setLoading(false)
+            return
+        }
+
+        const loadData = async () => {
             try {
+                console.log("[OrderDetail] Fetching order with ID:", id)
                 const orderData = await ordersAPI.getById(id)
                 if (!orderData) {
                     setError("Order not found")
@@ -47,7 +65,7 @@ export default function OrderDetailClient() {
         }
 
         loadData()
-    }, [id, router])
+    }, [router])
 
     if (loading) {
         return (
