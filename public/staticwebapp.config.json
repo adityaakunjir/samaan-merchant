@@ -6,13 +6,11 @@
         },
         {
             "route": "/merchant/orders/*",
-            "serve": "/merchant/orders/_fallback.html",
-            "statusCode": 200
+            "rewrite": "/merchant/orders/_fallback.html"
         },
         {
             "route": "/merchant/products/*",
-            "serve": "/merchant/products.html",
-            "statusCode": 200
+            "rewrite": "/merchant/products.html"
         }
     ],
     "navigationFallback": {
