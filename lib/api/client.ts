@@ -78,9 +78,18 @@ async function fetchAPI(endpoint: string, options: RequestInit = {}) {
       error.status = response.status
 
       if (response.status === 401 && typeof window !== "undefined") {
-        console.warn("[v0] Unauthorized access detected, redirecting to login...")
-        // We don't remove token automatically here as the page should handle it or the next login will
-        window.location.href = "/merchant/login"
+        console.error("[v0] ⚠️ UNAUTHORIZED (401) ERROR DETECTED")
+        console.error("[v0] URL:", url)
+        console.error("[v0] Token present:", !!token)
+        console.error("[v0] Token preview:", token ? `${token.substring(0, 20)}...` : "none")
+        console.error("[v0] Response:", errorText)
+
+        // TEMPORARILY DISABLED: Automatic redirect to allow debugging
+        // This was causing users to be logged out when accessing orders
+        // window.location.href = "/merchant/login"
+
+        console.warn("[v0] ⚠️ Automatic redirect DISABLED for debugging")
+        console.warn("[v0] Error will be thrown to calling page to handle")
       }
 
       throw error

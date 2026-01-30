@@ -17,8 +17,14 @@ export default function OrdersPage() {
       const token = getToken()
       const user = getUser()
 
+      console.log("[Orders Page] ========== AUTH DEBUG ==========")
       console.log("[Orders Page] Token exists:", !!token)
+      console.log("[Orders Page] Token length:", token?.length)
+      console.log("[Orders Page] Token preview:", token ? `${token.substring(0, 30)}...` : "none")
       console.log("[Orders Page] User:", user)
+      console.log("[Orders Page] User role:", user?.role)
+      console.log("[Orders Page] User merchantId:", user?.merchantId)
+      console.log("[Orders Page] =========================================")
 
       if (!token || !user) {
         console.warn("[Orders Page] No token or user, redirecting to login")
