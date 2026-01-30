@@ -1,5 +1,5 @@
 // API Client for .NET Backend
-const API_BASE_URL = "https://samaan-api.azurewebsites.net/api"
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://samaan-api.azurewebsites.net/api"
 
 // Token management
 export const getToken = (): string | null => {
@@ -76,6 +76,13 @@ async function fetchAPI(endpoint: string, options: RequestInit = {}) {
 
       const error = new Error(errorMessage) as any
       error.status = response.status
+
+      if (response.status === 401 && typeof window !== "undefined") {
+        console.warn("[v0] Unauthorized access detected, redirecting to login...")
+        // We don't remove token automatically here as the page should handle it or the next login will
+        window.location.href = "/merchant/login"
+      }
+
       throw error
     }
 
