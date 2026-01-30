@@ -37,6 +37,24 @@ const statusConfig: Record<OrderStatus, { icon: typeof Bell; color: string; labe
   "Cancelled": { icon: XCircle, color: "bg-red-100 text-red-700", label: "Cancelled" },
 }
 
+// Map API status values to OrderStatus values
+const statusMap: Record<string, OrderStatus> = {
+  "new": "Placed",
+  "placed": "Placed",
+  "confirmed": "Confirmed",
+  "packed": "Preparing",
+  "preparing": "Preparing",
+  "ready": "Out for Delivery",
+  "out for delivery": "Out for Delivery",
+  "delivered": "Delivered",
+  "cancelled": "Cancelled",
+}
+
+const normalizeStatus = (status: string): OrderStatus => {
+  const lowerStatus = status?.toLowerCase() || "placed"
+  return statusMap[lowerStatus] || (status as OrderStatus) || "Placed"
+}
+
 const statusFlow: OrderStatus[] = ["Placed", "Confirmed", "Preparing", "Out for Delivery", "Delivered"]
 
 export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
@@ -46,9 +64,10 @@ export function OrderDetail({ order: initialOrder }: OrderDetailProps) {
   const [addingNote, setAddingNote] = useState(false)
   const router = useRouter()
 
-  const config = statusConfig[order.status]
+  const normalizedStatus = normalizeStatus(order.status as string)
+  const config = statusConfig[normalizedStatus] || statusConfig["Placed"]
   const StatusIcon = config.icon
-  const currentIndex = statusFlow.indexOf(order.status)
+  const currentIndex = statusFlow.indexOf(normalizedStatus)
 
   const updateStatus = async (newStatus: string) => {
     setUpdating(true)
