@@ -8,7 +8,7 @@ Merchant-facing web app for **Samaan** (manage products/inventory, view orders, 
 ## Related Repositories
 - **Backend API:** https://github.com/adityaakunjir/samaan-api
 - **Customer App:** https://github.com/adityaakunjir/samaan-customer
-- **Portfolio Repo:** (create repo `Samaan` and link it here)
+- **Portfolio Repo:** https://github.com/adityaakunjir/Samaan
 
 ## Tech Stack
 - Next.js (React), TypeScript
